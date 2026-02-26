@@ -165,10 +165,16 @@ with tab2:
                 "Other" if x == "OTHER" else x for x in st.session_state.selected_friendly_list
             ]
         
+        # CRITICAL FIX for Streamlit Cloud: Filter default values to ensure they exist in options
+        # This prevents the "default value is not part of the options" crash.
+        options_list = sorted(list(col_options.keys()))
+        current_selections = st.session_state.get("selected_friendly_list", [])
+        safe_defaults = [val for val in current_selections if val in options_list]
+        
         selected_friendly = st.multiselect(
             "Final Quiz Selection", 
-            options=sorted(list(col_options.keys())),
-            default=st.session_state.get("selected_friendly_list", []),
+            options=options_list,
+            default=safe_defaults,
             help="These columns will be used to generate the quiz data."
         )
         
