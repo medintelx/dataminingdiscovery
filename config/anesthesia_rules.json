@@ -1,0 +1,24 @@
+{
+    "concept_id": "anesthesia_001",
+    "name": "Anesthesia Modifiers (QX/QK)",
+    "allowed_modifier_pairs": [
+        [
+            "QX",
+            "QK"
+        ]
+    ],
+    "overpayment_conditions": {
+        "duplicate_billing": "All attributes (Provider, Modifier, Units, DOS) match exactly for the same member and date.",
+        "modifier_mismatch": "Modifier QX billed with a non-matching direction modifier (other than QK)."
+    },
+    "explanation_templates": {
+        "allowed": "Provider billed QX and QK which are valid concurrent modifiers for Anesthesia.",
+        "denied": "Provider billed duplicate claims with identical attributes, which constitutes an overpayment.",
+        "recovery": "Recovery applied due to exact attribute match (same provider, modifier, units, dates)."
+    },
+    "synthetic_logic": {
+        "valid_scenario": "Scenario where QX and QK are billed correctly.",
+        "invalid_scenario_duplicate": "Scenario where identical attributes are billed twice.",
+        "invalid_scenario_modifier": "Scenario where an incorrect modifier is used."
+    }
+}

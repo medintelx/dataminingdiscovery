@@ -1,0 +1,8 @@
+[
+  {
+    "id": "anesthesia_001",
+    "name": "Anesthesia Modifiers (QX/QK)",
+    "description": "Validation of concurrent anesthesia billing by CRNAs (QX) and Medical Direction (QK).",
+    "rule_file": "anesthesia_rules.json"
+  }
+]

@@ -1,0 +1,7 @@
+streamlit
+clickhouse-connect
+pandas
+numpy
+json-tricks
+python-dotenv
+openai

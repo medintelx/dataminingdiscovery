@@ -1,0 +1,47 @@
+{
+  "concept_id": "anesthesia_001",
+  "questions": [
+    {
+      "column": "FROM_DT",
+      "text": "Is the From Date correct?",
+      "type": "Yes/No",
+      "options": []
+    },
+    {
+      "column": "PAID_DT",
+      "text": "Is the Claim Paid Date correct?",
+      "type": "Yes/No",
+      "options": []
+    },
+    {
+      "column": "MEME_CK",
+      "text": "Is the Member Contrived Key correct?",
+      "type": "Yes/No",
+      "options": []
+    },
+    {
+      "column": "TO_DT",
+      "text": "Is the To Date correct?",
+      "type": "Yes/No",
+      "options": []
+    },
+    {
+      "column": "HIGH_SVC_DT",
+      "text": "Is the Claim's Latest To Date correct?",
+      "type": "Yes/No",
+      "options": []
+    },
+    {
+      "column": "LOW_SVC_DT",
+      "text": "Is the Claim's Earliest From Date correct?",
+      "type": "Yes/No",
+      "options": []
+    },
+    {
+      "column": "MEME_SEX",
+      "text": "Is the Member's Gender correct?",
+      "type": "Yes/No",
+      "options": []
+    }
+  ]
+}
