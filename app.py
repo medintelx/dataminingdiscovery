@@ -85,7 +85,7 @@ with tab2:
     st.header("Build Your Questionnaire")
      
     reader = SchemaReader()
-    default_table = os.getenv("CLICKHOUSE_TABLE", "claims")
+    default_table = os.getenv("CLICKHOUSE_TABLE", "ClaimsInscope")
     
     # Auto-initialize columns if table name matches default or exists in session
     if "table_name_input" not in st.session_state:
