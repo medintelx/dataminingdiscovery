@@ -2,6 +2,7 @@ import pandas as pd
 import json
 import os
 import random
+import streamlit as st
 from openai import AzureOpenAI
 from dotenv import load_dotenv
 
@@ -10,10 +11,17 @@ load_dotenv()
 class LLMSyntheticGenerator:
     def __init__(self, concept_rules):
         self.rules = concept_rules
-        self.api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        self.endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-        self.deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
-        self.api_version = "2024-02-15-preview" # Defaulting to a stable preview version
+        
+        # Helper to get config from st.secrets or os.getenv
+        def get_cfg(key, default=None):
+            if key in st.secrets:
+                return st.secrets[key]
+            return os.getenv(key, default)
+
+        self.api_key = get_cfg("AZURE_OPENAI_API_KEY")
+        self.endpoint = get_cfg("AZURE_OPENAI_ENDPOINT")
+        self.deployment = get_cfg("AZURE_OPENAI_DEPLOYMENT")
+        self.api_version = "2024-02-15-preview" 
         
         if self.api_key and self.endpoint:
             self.client = AzureOpenAI(

@@ -5,11 +5,18 @@ import os
 
 class ClickHouseClient:
     def __init__(self, host=None, port=None, username=None, password=None, database=None):
-        self.host = host or os.getenv("CLICKHOUSE_HOST", "localhost")
-        self.port = port or int(os.getenv("CLICKHOUSE_PORT", 8443))
-        self.username = username or os.getenv("CLICKHOUSE_USER", "default")
-        self.password = password or os.getenv("CLICKHOUSE_PASSWORD", "")
-        self.database = database or os.getenv("CLICKHOUSE_DATABASE", "default")
+        # Helper to get config from st.secrets or os.getenv
+        def get_cfg(key, default=None):
+            if key in st.secrets:
+                return st.secrets[key]
+            return os.getenv(key, default)
+
+        self.host = host or get_cfg("CLICKHOUSE_HOST", "localhost")
+        raw_port = port or get_cfg("CLICKHOUSE_PORT", 8443)
+        self.port = int(raw_port)
+        self.username = username or get_cfg("CLICKHOUSE_USER", "default")
+        self.password = password or get_cfg("CLICKHOUSE_PASSWORD", "")
+        self.database = database or get_cfg("CLICKHOUSE_DATABASE", "default")
         self.client = None
 
     def connect(self):
