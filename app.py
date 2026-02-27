@@ -211,10 +211,10 @@ with tab2:
                     )
                     q_type = c2.selectbox(
                         "Response Type", 
-                        ["Yes/No", "Multiple Choice", "Free Text"], 
-                        index=0 if st.session_state.get(f"q_type_{orig_name}") == "Yes/No" else 
-                              1 if st.session_state.get(f"q_type_{orig_name}") == "Multiple Choice" else 2,
-                        key=f"q_type_{orig_name}"
+                        ["Yes/No", "Multiple Choice"], 
+                        index=0 if st.session_state.get(f"q_type_{orig_name}") == "Yes/No" else 1,
+                        key=f"q_type_{orig_name}",
+                        help="Free Text is no longer supported for audits; use Yes/No for verification."
                     )
                     
                     options = []
@@ -253,7 +253,11 @@ with tab3:
                 with st.container(border=True):
                     friendly = ui_schema_mgr.get_friendly_name(q["column"])
                     st.write(f"**Q{idx+1}:** {q['text']}")
-                    st.caption(f"Field: {friendly} ({q['column']}) | Type: {q['type']}")
+                    # Migration display: Show Yes/No instead of Free Text
+                    display_type = q['type']
+                    if display_type in ["Free Text", "Informational"]:
+                        display_type = "Yes/No"
+                    st.caption(f"Field: {friendly} ({q['column']}) | Type: {display_type}")
         
         if st.button("🤖 Regenerate with AI (Overwrites current)", use_container_width=True):
             show_gen_form = True
@@ -288,13 +292,12 @@ with tab3:
                     q_text = sug.get('text', 'No question')
                     q_type = sug.get('type', 'Unknown')
                     st.markdown(f"📍 **Field:** {friendly} (`{col_name}`)")
-                    if q_type == "Yes/No":
-                        st.radio(q_text, ["Yes", "No"], disabled=True, key=f"ai_gen_y_{i}")
-                    elif q_type == "Multiple Choice":
+                    if q_type == "Multiple Choice":
                         opts = sug.get("options", ["Option 1"])
                         st.selectbox(q_text, opts, disabled=True, key=f"ai_gen_m_{i}")
                     else:
-                        st.text_input(q_text, value="...", disabled=True, key=f"ai_gen_i_{i}")
+                        # Default all others (including any accidental Free Text) to Yes/No
+                        st.radio(q_text, ["Yes", "No"], disabled=True, key=f"ai_gen_y_{i}")
             
             if st.form_submit_button("✅ Apply & Save This Questionnaire", use_container_width=True):
                 q_builder = QuestionnaireBuilder(selected_concept["id"])
@@ -326,7 +329,7 @@ with tab4:
     
     # Auto-load from DB if session state is empty
     if st.session_state.quiz_data is None:
-        db_df, db_gt = q_builder.load_quiz_data(selected_concept["id"])
+        db_df, db_gt = QuestionnaireBuilder.load_quiz_data(selected_concept["id"])
         if db_df is not None:
             st.session_state.quiz_data = db_df
             st.session_state.ground_truth = db_gt

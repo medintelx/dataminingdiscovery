@@ -1,6 +1,7 @@
 import sqlite3
 import json
 import os
+import pandas as pd
 
 class QuestionnaireBuilder:
     DB_PATH = "config/questionnaires.db"
@@ -89,7 +90,6 @@ class QuestionnaireBuilder:
             row = cursor.fetchone()
             
         if row:
-            import pandas as pd
             df = pd.read_json(row[0], orient='records')
             gt = json.loads(row[1])
             return df, gt
