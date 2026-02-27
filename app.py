@@ -57,12 +57,22 @@ if st.session_state.get("current_concept_id") != selected_concept["id"]:
         for q in existing_q["questions"]:
             col = q["column"]
             st.session_state[f"q_text_{col}"] = q["text"]
-            st.session_state[f"q_type_{col}"] = q["type"]
+            # AUTOMATIC MIGRATION: Convert Free Text/Informational to Yes/No
+            q_type = q.get("type", "Yes/No")
+            if q_type in ["Free Text", "Informational"]:
+                q_type = "Yes/No"
+            st.session_state[f"q_type_{col}"] = q_type
+            
             if q.get("options"):
                 st.session_state[f"q_opts_{col}"] = ", ".join(q["options"])
     else:
         # Reset if no questionnaire exists for this concept
         st.session_state.selected_friendly_list = []
+    
+    # Force quiz data reload for new concept
+    st.session_state.quiz_data = None
+    st.session_state.ground_truth = None
+    st.session_state.ai_suggestions = None
 
 if st.sidebar.button("Reset Session"):
     st.session_state.clear()
@@ -71,7 +81,7 @@ if st.sidebar.button("Reset Session"):
 # Main App
 #render_header("Concept-Based Claims Quiz", "Education & Calibration Platform")
 
-tab1, tab2, tab3 = st.tabs(["📚 Concept Overview", "🛠️ Questionnaire Builder", "✍️ Take Quiz"])
+tab1, tab2, tab3, tab4 = st.tabs(["📚 Concept Overview", "🛠️ Questionnaire Builder", "🤖 Auto-Generated questionnaire", "✍️ Take Quiz"])
 
 with tab1:
     st.header("Concept Details")
@@ -201,7 +211,7 @@ with tab2:
                     )
                     q_type = c2.selectbox(
                         "Response Type", 
-                        ["Yes/No", "Multiple Choice", "Informational"], 
+                        ["Yes/No", "Multiple Choice", "Free Text"], 
                         index=0 if st.session_state.get(f"q_type_{orig_name}") == "Yes/No" else 
                               1 if st.session_state.get(f"q_type_{orig_name}") == "Multiple Choice" else 2,
                         key=f"q_type_{orig_name}"
@@ -227,6 +237,76 @@ with tab2:
             st.info("Pick columns using the dropdown or shortcuts above to see question templates.")
 
 with tab3:
+    st.header("AI Questionnaire Generator")
+    
+    # Persistent View: Check for existing saved questionnaire first
+    saved_q = QuestionnaireBuilder.load_questionnaire(selected_concept["id"])
+    
+    show_gen_form = False
+    
+    if saved_q and saved_q.get("questions"):
+        ui_schema_mgr = SchemaManager()
+        st.success(f"✅ Active Questionnaire found for {selected_concept['name']}")
+        
+        with st.expander("📋 Current Configuration"):
+            for idx, q in enumerate(saved_q["questions"]):
+                with st.container(border=True):
+                    friendly = ui_schema_mgr.get_friendly_name(q["column"])
+                    st.write(f"**Q{idx+1}:** {q['text']}")
+                    st.caption(f"Field: {friendly} ({q['column']}) | Type: {q['type']}")
+        
+        if st.button("🤖 Regenerate with AI (Overwrites current)", use_container_width=True):
+            show_gen_form = True
+            st.session_state.ai_suggestions = None
+    else:
+        st.info("No questionnaire found. Let AI analyze your rules and schema to build an optimized audit form.")
+        show_gen_form = True
+
+    if show_gen_form or st.session_state.get("ai_suggestions"):
+        if st.button("🚀 Run AI Analysis", use_container_width=True, type="primary"):
+            if "available_columns" not in st.session_state:
+                st.warning("Please ensure the schema is synced first.")
+            else:
+                rules = load_rules(selected_concept["rule_file"])
+                gen = LLMSyntheticGenerator(rules)
+                with st.spinner("Analyzing rules..."):
+                    suggestions = gen.generate_suggested_questionnaire(st.session_state.available_columns)
+                    st.session_state.ai_suggestions = suggestions
+                    if suggestions:
+                        st.success("AI Generation Complete!")
+
+    if st.session_state.get("ai_suggestions"):
+        st.subheader("🤖 AI Preview (Suggested)")
+        schema_mgr = SchemaManager()
+        
+        with st.form("auto_save_form"):
+            for i, sug in enumerate(st.session_state.ai_suggestions):
+                if not isinstance(sug, dict): continue
+                with st.container(border=True):
+                    col_name = sug.get("column", "Unknown")
+                    friendly = schema_mgr.get_friendly_name(col_name)
+                    q_text = sug.get('text', 'No question')
+                    q_type = sug.get('type', 'Unknown')
+                    st.markdown(f"📍 **Field:** {friendly} (`{col_name}`)")
+                    if q_type == "Yes/No":
+                        st.radio(q_text, ["Yes", "No"], disabled=True, key=f"ai_gen_y_{i}")
+                    elif q_type == "Multiple Choice":
+                        opts = sug.get("options", ["Option 1"])
+                        st.selectbox(q_text, opts, disabled=True, key=f"ai_gen_m_{i}")
+                    else:
+                        st.text_input(q_text, value="...", disabled=True, key=f"ai_gen_i_{i}")
+            
+            if st.form_submit_button("✅ Apply & Save This Questionnaire", use_container_width=True):
+                q_builder = QuestionnaireBuilder(selected_concept["id"])
+                for sug in st.session_state.ai_suggestions:
+                    if isinstance(sug, dict):
+                        q_builder.add_question(sug.get("column", "OTHER"), sug.get("text"), sug.get("type"), options=sug.get("options", []))
+                q_builder.save_questionnaire()
+                st.session_state.selected_friendly_list = [schema_mgr.get_friendly_name(s["column"]) for s in st.session_state.ai_suggestions if isinstance(s, dict)]
+                st.session_state.ai_suggestions = None
+                st.rerun()
+
+with tab4:
     st.header("Calibration Quiz")
     
     rules = load_rules(selected_concept["rule_file"])
@@ -241,23 +321,37 @@ with tab3:
     # Load the saved questionnaire for this concept
     saved_q = QuestionnaireBuilder.load_questionnaire(selected_concept["id"])
     
-    if st.button("🔄 Generate New Quiz Data"):
+    # Persistent Quiz Data Logic
+    q_builder = QuestionnaireBuilder(selected_concept["id"])
+    
+    # Auto-load from DB if session state is empty
+    if st.session_state.quiz_data is None:
+        db_df, db_gt = q_builder.load_quiz_data(selected_concept["id"])
+        if db_df is not None:
+            st.session_state.quiz_data = db_df
+            st.session_state.ground_truth = db_gt
+            st.info("Loaded previously generated quiz data.")
+
+    if st.button("🔄 Generate & Save New Quiz Data", use_container_width=True, type="primary"):
         if gen_mode == "LLM (AI Generated)":
             if not saved_q:
-                st.error("Please build a questionnaire first so the LLM knows which columns to generate.")
+                st.error("Please build a questionnaire first.")
             else:
                 cols = [q["column"] for q in saved_q["questions"]]
-                with st.spinner("LLM is generating synthetic claims..."):
+                with st.spinner("Generating new scenarios..."):
                     df, gt = generator.generate_quiz_data(cols, 5)
                     st.session_state.quiz_data = df
                     st.session_state.ground_truth = gt
+                    q_builder.save_quiz_data(df, gt)
         else:
             df, gt = generator.generate_quiz_data(5)
             st.session_state.quiz_data = df
             st.session_state.ground_truth = gt
+            q_builder.save_quiz_data(df, gt)
             
         st.session_state.user_responses = {} # Reset answers
-        st.success("New synthetic data generated!")
+        st.success("New data generated and saved!")
+        st.rerun()
 
     if st.session_state.quiz_data is not None:
         st.subheader("Synthetic Claim Records (Non-PHI)")
@@ -294,10 +388,60 @@ with tab3:
                                 item_options = ["Option A", "Option B"]
                             ans = st.selectbox(q["text"], item_options, key=q_key)
                         else:
-                            ans = st.text_input(q["text"], key=q_key)
+                            # Robust Data Lookup: Try exact internal, then case-insensitive internal, then friendly, then common aliases
+                            target_key = orig_col.upper()
+                            col_val = "N/A"
+                            
+                            # Standardize row index for matching
+                            row_cols = {str(k).upper().replace(" ", "_"): v for k, v in row.to_dict().items()}
+                            friendly_name_upper = friendly_col.upper().replace(" ", "_")
+                            
+                            # Define Common Aliases for the lookup bridge
+                            aliases = {
+                                "CLCL_ID": ["CLAIM_ID", "CLAIMID", "IDENTIFIER", "CLAIM_IDENTIFIER"],
+                                "IPCD_ID": ["PROC_CODE", "PROCEDURE", "CPT"],
+                                "IPCD_MOD1_DER": ["MODIFIER", "MOD", "PROC_MOD", "QX", "QK"],
+                                "FROM_DT": ["DOS", "DATE_OF_SERVICE", "SERVICE_DATE"],
+                                "PAID_AMT": ["PAID", "AMOUNT", "PAID_AMOUNT"]
+                            }
+                            
+                            if target_key in row_cols:
+                                col_val = row_cols[target_key]
+                            elif friendly_name_upper in row_cols:
+                                col_val = row_cols[friendly_name_upper]
+                            else:
+                                # Check aliases
+                                found_alias = False
+                                if target_key in aliases:
+                                    for alias in aliases[target_key]:
+                                        if alias in row_cols:
+                                            col_val = row_cols[alias]
+                                            found_alias = True
+                                            break
+                                
+                                if not found_alias:
+                                    # Final attempt: partial match
+                                    for k, v in row_cols.items():
+                                        if target_key in k or k in target_key:
+                                            col_val = v
+                                            break
+                            
+                            # Handle empty/null values
+                            if pd.isna(col_val) or col_val == "" or col_val is None:
+                                col_val = "Record found but value is empty"
+                                
+                            st.markdown(f"🔍 **Actual Data:** `{col_val}`")
+                            ans = st.text_input(q["text"], key=q_key, placeholder="Enter auditor notes/comments here...")
                         
                         row_answers[q["column"]] = ans
                     user_quiz_answers[i] = row_answers
+            
+            # Diagnostic for User
+            with st.expander("🛠️ Quiz Data Diagnostics (Debug)"):
+                st.write("Columns available in generated data:")
+                st.code(list(st.session_state.quiz_data.columns))
+                st.write("Sample row (internal names):")
+                st.json(st.session_state.quiz_data.iloc[0].to_dict() if not st.session_state.quiz_data.empty else {})
 
             if st.button("🚀 Submit Quiz"):
                 # Use ground truth logic (simplified to overpayment for now)

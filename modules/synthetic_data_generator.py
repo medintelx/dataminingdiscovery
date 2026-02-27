@@ -6,9 +6,10 @@ from datetime import datetime, timedelta
 class SyntheticDataGenerator:
     def __init__(self, concept_rules):
         self.rules = concept_rules
+        # Use internal database names to match schema and questionnaire
         self.columns = [
-            "Claim_ID", "Provider_ID", "Member_ID", "DOS", 
-            "Proc_Code", "Modifier", "Units", "Paid_Amt", "Status"
+            "CLCL_ID", "PRPR_ID", "MEME_CK", "FROM_DT", 
+            "IPCD_ID", "IPCD_MOD1_DER", "UNITS", "PAID_AMT", "CUR_STS"
         ]
 
     def generate_quiz_data(self, count=5):
@@ -58,18 +59,18 @@ class SyntheticDataGenerator:
 
     def _generate_row(self, idx, scenario_type, mod="QX"):
         base_claim = {
-            "Claim_ID": f"CLM{1000 + idx}",
-            "Provider_ID": "PROV_99",
-            "Member_ID": "MEM_88",
-            "DOS": "2024-01-15",
-            "Proc_Code": "00100",
-            "Modifier": mod,
-            "Units": 1,
-            "Paid_Amt": 150.00,
-            "Status": "Paid"
+            "CLCL_ID": f"CLM{1000 + idx}",
+            "PRPR_ID": "PROV_99",
+            "MEME_CK": "MEM_88",
+            "FROM_DT": "2024-01-15",
+            "IPCD_ID": "00100",
+            "IPCD_MOD1_DER": mod,
+            "UNITS": 1,
+            "PAID_AMT": 150.00,
+            "CUR_STS": "Paid"
         }
 
         if scenario_type == "mismatch":
-            base_claim["Modifier"] = "ZZ"
+            base_claim["IPCD_MOD1_DER"] = "ZZ"
 
         return base_claim
