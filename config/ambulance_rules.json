@@ -1,0 +1,13 @@
+{
+    "concept_id": "ambulance_001",
+    "name": "Ambulance with same modifiers",
+    "description": "Validation of multiple ambulance trips on the same day. Mod 76 indicates a duplicate but must be verified against pick-up/drop-off locations.",
+    "overpayment_conditions": {
+        "unsupported_duplicate": "Multiple ambulance claims with same modifier (especially Mod 76) without supporting history or distinct locations.",
+        "location_match": "Pick-up and Drop-off locations match exactly on multiple claims, suggesting a duplicate billing of the same trip."
+    },
+    "explanation_templates": {
+        "valid": "Multiple ambulance trips supported by distinct locations or member history.",
+        "duplicate": "Mod 76 used on multiple claims without evidence of separate trips or distinct locations."
+    }
+}

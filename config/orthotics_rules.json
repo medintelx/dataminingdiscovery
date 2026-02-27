@@ -1,0 +1,13 @@
+{
+    "concept_id": "orthotics_001",
+    "name": "Orthotics LT/RT",
+    "description": "Validation of LT/RT modifiers versus bilateral billing in Orthotics.",
+    "overpayment_conditions": {
+        "missing_modifier_mismatch": "Code billed with LT or RT mod and then same code without modifier, where Dx does not indicate bilateral condition.",
+        "dx_bilateral_exception": "Dx indicated bilateral condition, allowing use of both LT and RT billing patterns (Not an overpayment)."
+    },
+    "explanation_templates": {
+        "valid": "Bilateral billing pattern supported by diagnosis code.",
+        "duplicate": "Claim billed without modifier after LT/RT modifier claim already processed for same code."
+    }
+}

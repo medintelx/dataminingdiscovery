@@ -1,0 +1,14 @@
+{
+    "concept_id": "transplant_001",
+    "name": "Transplant Claims",
+    "description": "Validation of transplant pricing handled by Optum. Special handling for payments over $5K.",
+    "overpayment_conditions": {
+        "optum_pricing_mismatch": "One claim priced by Optum and the opposite claim (unpriced) is billed and hasn't expired.",
+        "dual_optum_pricing": "Both claims priced by 'transplant claims priced by Optum' (Should not be written).",
+        "over_5k_sop": "Payment exceeds $5K and does not follow the Transplant SOP."
+    },
+    "explanation_templates": {
+        "valid": "Pricing aligns with Optum Transplant pricing guidelines or follows Transplant SOP for high-dollar claims.",
+        "recovery": "Opposite claim billed while one claim was correctly priced by Optum; recovery potential identified."
+    }
+}

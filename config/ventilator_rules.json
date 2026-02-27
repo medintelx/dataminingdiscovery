@@ -1,0 +1,13 @@
+{
+    "concept_id": "ventilator_001",
+    "name": "Home Ventilator (E0465/E0466)",
+    "description": "Review for duplicate home ventilator claims (E0465/E0466). Allows up to 2 per day in some cases.",
+    "overpayment_conditions": {
+        "excess_units": "More than 2 ventilator claims (E0465/E0466) on the same day without historical justification.",
+        "duplicate_history": "Claim matches existing payment pattern in history suggesting a duplicate billing."
+    },
+    "explanation_templates": {
+        "valid": "Up to 2 per day allowed based on medical necessity and history.",
+        "duplicate": "Excessive frequency identified based on member history for home ventilator billing."
+    }
+}

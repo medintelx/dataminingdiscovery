@@ -1,0 +1,13 @@
+{
+    "concept_id": "therapy_001",
+    "name": "Therapy - Physical (GP) / Occupational (GO)",
+    "description": "Review for duplicate therapy visits on the same day with same modifiers (GP, GO).",
+    "overpayment_conditions": {
+        "same_day_same_modifier": "Multiple visits on the same day with the same therapy modifier (GP for Physical, GO for Occupational) from the same provider.",
+        "attribute_match": "Modifier, provider, charges, and units match exactly on same-day visits."
+    },
+    "explanation_templates": {
+        "valid": "Separate therapy sessions with justification for same-day service.",
+        "duplicate": "Duplicate charges for same therapy type on the same date of service with matching attributes."
+    }
+}

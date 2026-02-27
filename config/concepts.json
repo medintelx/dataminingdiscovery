@@ -4,5 +4,35 @@
     "name": "Anesthesia Modifiers (QX/QK)",
     "description": "Validation of concurrent anesthesia billing by CRNAs (QX) and Medical Direction (QK).",
     "rule_file": "anesthesia_rules.json"
+  },
+  {
+    "id": "ambulance_001",
+    "name": "Ambulance - Duplicate Trips",
+    "description": "Validation of multiple ambulance trips on same day, check locations and history.",
+    "rule_file": "ambulance_rules.json"
+  },
+  {
+    "id": "therapy_001",
+    "name": "Therapy - Physical/Occupational",
+    "description": "Review for duplicate therapy visits (GP, GO) on the same day.",
+    "rule_file": "therapy_rules.json"
+  },
+  {
+    "id": "transplant_001",
+    "name": "Transplant Claims (Optum)",
+    "description": "Validation of transplant pricing handled by Optum vs standard billing.",
+    "rule_file": "transplant_rules.json"
+  },
+  {
+    "id": "orthotics_001",
+    "name": "Orthotics LT/RT",
+    "description": "Validation of LT/RT modifiers versus bilateral billing in Orthotics.",
+    "rule_file": "orthotics_rules.json"
+  },
+  {
+    "id": "ventilator_001",
+    "name": "Home Ventilator (E0465/E0466)",
+    "description": "Review for duplicate home ventilator claims (E0465/E0466).",
+    "rule_file": "ventilator_rules.json"
   }
 ]
