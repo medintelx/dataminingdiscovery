@@ -81,7 +81,7 @@ if st.sidebar.button("Reset Session"):
 # Main App
 #render_header("Concept-Based Claims Quiz", "Education & Calibration Platform")
 
-tab1, tab2, tab3, tab4 = st.tabs(["📚 Concept Overview", "🛠️ Questionnaire Builder", "🤖 Auto-Generated questionnaire", "✍️ Take Quiz"])
+tab1, tab2, tab3, tab4 = st.tabs(["📚 Concept Overview", "🛠️ Questionnaire Builder", "🤖 Questionnaire", "✍️ Take Quiz"])
 
 with tab1:
     st.header("Concept Details")
@@ -237,7 +237,7 @@ with tab2:
             st.info("Pick columns using the dropdown or shortcuts above to see question templates.")
 
 with tab3:
-    st.header("AI Questionnaire Generator")
+    st.header("Sample Questionnaire ")
     
     # Persistent View: Check for existing saved questionnaire first
     saved_q = QuestionnaireBuilder.load_questionnaire(selected_concept["id"])
@@ -259,7 +259,7 @@ with tab3:
                         display_type = "Yes/No"
                     st.caption(f"Field: {friendly} ({q['column']}) | Type: {display_type}")
         
-        if st.button("🤖 Regenerate with AI (Overwrites current)", use_container_width=True):
+        if st.button("🤖 Regenerate (Overwrites current)", use_container_width=True):
             show_gen_form = True
             st.session_state.ai_suggestions = None
     else:
@@ -267,7 +267,7 @@ with tab3:
         show_gen_form = True
 
     if show_gen_form or st.session_state.get("ai_suggestions"):
-        if st.button("🚀 Run AI Analysis", use_container_width=True, type="primary"):
+        if st.button("🚀 RunAnalysis", use_container_width=True, type="primary"):
             if "available_columns" not in st.session_state:
                 st.warning("Please ensure the schema is synced first.")
             else:
