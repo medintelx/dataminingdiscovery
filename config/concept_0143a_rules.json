@@ -1,0 +1,13 @@
+{
+    "concept_id": "concept_0143a",
+    "name": "Concept 0143A - Welcome to Medicare and Annual Wellness Codes PAIR_Updated  ...",
+    "description": "Auditing logic for Welcome to Medicare and Annual Wellness Codes PAIR_Updated  (1)",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Welcome to Medicare and Annual Wellness Codes PAIR_Updated  (1) showing improper duplicate or conflicting billing."
+    }
+}

@@ -1,0 +1,20 @@
+{
+    "concept_id": "concept_0093a",
+    "name": "Concept 0093A - Dupe Line Level Different COB Paid Amount  Different Line Pa...",
+    "description": "Auditing logic for Dupe Line Level Different COB Paid Amount  Different Line Paid Amount",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "CLCL_ID": "Must be Different",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same base 5",
+        "CHG_AMT": "Must be Same",
+        "CDCB_COB_AMT": "Must be Different",
+        "PAID_AMT": "Must be Different and > 0",
+        "SRVC_PROV_TIN": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Different COB Paid Amount  Different Line Paid Amount showing improper duplicate or conflicting billing."
+    }
+}

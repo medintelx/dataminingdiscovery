@@ -1,0 +1,17 @@
+{
+    "concept_id": "concept_0128a",
+    "name": "Concept 0128A - Subsequent Hospital Visit and Disc Day Mngmt on the Same Day...",
+    "description": "Auditing logic for Subsequent Hospital Visit and Disc Day Mngmt on the Same Day (Unbundling)",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "SRVC_PROV_TIN": "Must be Same",
+        "PRCF_MCTR_SPEC": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Subsequent Hospital Visit and Disc Day Mngmt on the Same Day (Unbundling) showing improper duplicate or conflicting billing."
+    }
+}

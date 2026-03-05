@@ -1,0 +1,21 @@
+{
+    "concept_id": "concept_0132w",
+    "name": "Concept 0132W - Dupe Detail Exact Dupe Processed on Same Day and Same Patien...",
+    "description": "Auditing logic for Dupe Detail Exact Dupe Processed on Same Day and Same Patient Account Number",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "LOBD_ID": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "PRPR_NAME": "Must be Same",
+        "IPCD_ID": "Must be Same",
+        "SRVC_PROV_TIN": "Must be Same",
+        "CKPY_PAY_DT": "Must be Same",
+        "PA_ACCT_NO": "Must be Same",
+        "IDCD_ID": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Detail Exact Dupe Processed on Same Day and Same Patient Account Number showing improper duplicate or conflicting billing."
+    }
+}

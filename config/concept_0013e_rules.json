@@ -1,0 +1,15 @@
+{
+    "concept_id": "concept_0013e",
+    "name": "Concept 0013E - Dupe Header SNF One OC...",
+    "description": "Auditing logic for Dupe Header SNF One OC",
+    "overpayment_conditions": {
+        "MEME_CK": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "CLCL_ID": "Must be Different",
+        "FROM_DT": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Header SNF One OC showing improper duplicate or conflicting billing."
+    }
+}

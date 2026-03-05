@@ -1,0 +1,18 @@
+{
+    "concept_id": "concept_0088e",
+    "name": "Concept 0088E - Dupe Line Level Same Procedure Same Provider Diff Claim Type...",
+    "description": "Auditing logic for Dupe Line Level Same Procedure Same Provider Diff Claim Type",
+    "overpayment_conditions": {
+        "CLCL_ID": "Must be Different",
+        "CL_SUB_TYPE": "Must be Different",
+        "SBSB_ID": "Must be Same",
+        "MEME_FIRST_NAME": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same",
+        "SRVC_PROV_TIN": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Same Procedure Same Provider Diff Claim Type showing improper duplicate or conflicting billing."
+    }
+}

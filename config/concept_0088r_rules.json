@@ -1,0 +1,17 @@
+{
+    "concept_id": "concept_0088r",
+    "name": "Concept 0088R - Dupe Pair Ambulance same account #  (1)...",
+    "description": "Auditing logic for Dupe Pair Ambulance same account #  (1)",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_FIRST_NAME": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same see list below",
+        "PA_ACCT_NO": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Pair Ambulance same account #  (1) showing improper duplicate or conflicting billing."
+    }
+}

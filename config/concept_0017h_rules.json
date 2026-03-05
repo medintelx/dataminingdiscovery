@@ -1,0 +1,12 @@
+{
+    "concept_id": "concept_0017h",
+    "name": "Concept 0017H - Dupe Line Level Same Inpatient Revenue Code...",
+    "description": "Auditing logic for Dupe Line Level Same Inpatient Revenue Code",
+    "overpayment_conditions": {
+        "general_rule": "Refer to the dataset for explicit criteria."
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Same Inpatient Revenue Code showing improper duplicate or conflicting billing."
+    }
+}

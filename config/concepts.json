@@ -1,38 +1,200 @@
 [
-  {
-    "id": "anesthesia_001",
-    "name": "Anesthesia Modifiers (QX/QK)",
-    "description": "Validation of concurrent anesthesia billing by CRNAs (QX) and Medical Direction (QK).",
-    "rule_file": "anesthesia_rules.json"
-  },
-  {
-    "id": "ambulance_001",
-    "name": "Ambulance - Duplicate Trips",
-    "description": "Validation of multiple ambulance trips on same day, check locations and history.",
-    "rule_file": "ambulance_rules.json"
-  },
-  {
-    "id": "therapy_001",
-    "name": "Therapy - Physical/Occupational",
-    "description": "Review for duplicate therapy visits (GP, GO) on the same day.",
-    "rule_file": "therapy_rules.json"
-  },
-  {
-    "id": "transplant_001",
-    "name": "Transplant Claims (Optum)",
-    "description": "Validation of transplant pricing handled by Optum vs standard billing.",
-    "rule_file": "transplant_rules.json"
-  },
-  {
-    "id": "orthotics_001",
-    "name": "Orthotics LT/RT",
-    "description": "Validation of LT/RT modifiers versus bilateral billing in Orthotics.",
-    "rule_file": "orthotics_rules.json"
-  },
-  {
-    "id": "ventilator_001",
-    "name": "Home Ventilator (E0465/E0466)",
-    "description": "Review for duplicate home ventilator claims (E0465/E0466).",
-    "rule_file": "ventilator_rules.json"
-  }
+    {
+        "id": "anesthesia_001",
+        "name": "Anesthesia Modifiers (QX/QK)",
+        "description": "Validation of concurrent anesthesia billing by CRNAs (QX) and Medical Direction (QK).",
+        "rule_file": "anesthesia_rules.json"
+    },
+    {
+        "id": "ambulance_001",
+        "name": "Ambulance - Duplicate Trips",
+        "description": "Validation of multiple ambulance trips on same day, check locations and history.",
+        "rule_file": "ambulance_rules.json"
+    },
+    {
+        "id": "therapy_001",
+        "name": "Therapy - Physical/Occupational",
+        "description": "Review for duplicate therapy visits (GP, GO) on the same day.",
+        "rule_file": "therapy_rules.json"
+    },
+    {
+        "id": "transplant_001",
+        "name": "Transplant Claims (Optum)",
+        "description": "Validation of transplant pricing handled by Optum vs standard billing.",
+        "rule_file": "transplant_rules.json"
+    },
+    {
+        "id": "orthotics_001",
+        "name": "Orthotics LT/RT",
+        "description": "Validation of LT/RT modifiers versus bilateral billing in Orthotics.",
+        "rule_file": "orthotics_rules.json"
+    },
+    {
+        "id": "ventilator_001",
+        "name": "Home Ventilator (E0465/E0466)",
+        "description": "Review for duplicate home ventilator claims (E0465/E0466).",
+        "rule_file": "ventilator_rules.json"
+    },
+    {
+        "id": "concept_0017k",
+        "name": "Concept 0017K - Dupe Line Level Same Charge Same Tax ID ...",
+        "description": "Validation logic for Dupe Line Level Same Charge Same Tax ID Different NPI.",
+        "rule_file": "concept_0017k_rules.json"
+    },
+    {
+        "id": "concept_0013e",
+        "name": "Concept 0013E - Dupe Header SNF One OC...",
+        "description": "Validation logic for Dupe Header SNF One OC.",
+        "rule_file": "concept_0013e_rules.json"
+    },
+    {
+        "id": "concept_0017b",
+        "name": "Concept 0017B - Dupe Line Level Same Practitioner Versio...",
+        "description": "Validation logic for Dupe Line Level Same Practitioner Version 2.",
+        "rule_file": "concept_0017b_rules.json"
+    },
+    {
+        "id": "concept_0017h",
+        "name": "Concept 0017H - Dupe Line Level Same Inpatient Revenue C...",
+        "description": "Validation logic for Dupe Line Level Same Inpatient Revenue Code.",
+        "rule_file": "concept_0017h_rules.json"
+    },
+    {
+        "id": "concept_0063b",
+        "name": "Concept 0063B - Dupe Same J Code Dispensed by Same Medic...",
+        "description": "Validation logic for Dupe Same J Code Dispensed by Same Medical Provider.",
+        "rule_file": "concept_0063b_rules.json"
+    },
+    {
+        "id": "concept_0079a",
+        "name": "Concept 0079A - Dupe Line Level Same Procedure Code Same...",
+        "description": "Validation logic for Dupe Line Level Same Procedure Code Same Patient Account Number.",
+        "rule_file": "concept_0079a_rules.json"
+    },
+    {
+        "id": "concept_0079b",
+        "name": "Concept 0079B - Dupe Line Level Same Procedure Code Simi...",
+        "description": "Validation logic for Dupe Line Level Same Procedure Code Similar Patient Account Number.",
+        "rule_file": "concept_0079b_rules.json"
+    },
+    {
+        "id": "concept_0087a",
+        "name": "Concept 0087A - Dupe Line Level Same Charge One Par One ...",
+        "description": "Validation logic for Dupe Line Level Same Charge One Par One NonPar.",
+        "rule_file": "concept_0087a_rules.json"
+    },
+    {
+        "id": "concept_0093a",
+        "name": "Concept 0093A - Dupe Line Level Different COB Paid Amoun...",
+        "description": "Validation logic for Dupe Line Level Different COB Paid Amount  Different Line Paid Amount.",
+        "rule_file": "concept_0093a_rules.json"
+    },
+    {
+        "id": "concept_0017a",
+        "name": "Concept 0017A - Dupe Line Level Different Practitioner_T...",
+        "description": "Validation logic for Dupe Line Level Different Practitioner_TIN 2.",
+        "rule_file": "concept_0017a_rules.json"
+    },
+    {
+        "id": "concept_0024a",
+        "name": "Concept 0024A - Claim Denied After Member Terminated_upd...",
+        "description": "Validation logic for Claim Denied After Member Terminated_updated.",
+        "rule_file": "concept_0024a_rules.json"
+    },
+    {
+        "id": "concept_0053a",
+        "name": "Concept 0053A - Home Infusion During Inpatient Stay Upda...",
+        "description": "Validation logic for Home Infusion During Inpatient Stay Updated.",
+        "rule_file": "concept_0053a_rules.json"
+    },
+    {
+        "id": "concept_0053b",
+        "name": "Concept 0053B - DME During Inpatient Stay_Updated  (1)...",
+        "description": "Validation logic for DME During Inpatient Stay_Updated  (1).",
+        "rule_file": "concept_0053b_rules.json"
+    },
+    {
+        "id": "concept_0088d",
+        "name": "Concept 0088D - Dupe Line Level Same Procedure Code Same...",
+        "description": "Validation logic for Dupe Line Level Same Procedure Code Same NPI One With Modifier.",
+        "rule_file": "concept_0088d_rules.json"
+    },
+    {
+        "id": "concept_0088e",
+        "name": "Concept 0088E - Dupe Line Level Same Procedure Same Prov...",
+        "description": "Validation logic for Dupe Line Level Same Procedure Same Provider Diff Claim Type.",
+        "rule_file": "concept_0088e_rules.json"
+    },
+    {
+        "id": "concept_0088l",
+        "name": "Concept 0088L - Dupe Line Level Same Ln Chrg Same Claim ...",
+        "description": "Validation logic for Dupe Line Level Same Ln Chrg Same Claim Chrg Same DOS Same Proc Code Same NPI Same Tax ID.",
+        "rule_file": "concept_0088l_rules.json"
+    },
+    {
+        "id": "concept_0088n",
+        "name": "Concept 0088N - Dupe Line Level Office Visit Same NPI...",
+        "description": "Validation logic for Dupe Line Level Office Visit Same NPI.",
+        "rule_file": "concept_0088n_rules.json"
+    },
+    {
+        "id": "concept_0088r",
+        "name": "Concept 0088R - Dupe Pair Ambulance same account #  (1)...",
+        "description": "Validation logic for Dupe Pair Ambulance same account #  (1).",
+        "rule_file": "concept_0088r_rules.json"
+    },
+    {
+        "id": "concept_0128a",
+        "name": "Concept 0128A - Subsequent Hospital Visit and Disc Day M...",
+        "description": "Validation logic for Subsequent Hospital Visit and Disc Day Mngmt on the Same Day (Unbundling).",
+        "rule_file": "concept_0128a_rules.json"
+    },
+    {
+        "id": "concept_0128c",
+        "name": "Concept 0128C - Critical Care Codes  (2)...",
+        "description": "Validation logic for Critical Care Codes  (2).",
+        "rule_file": "concept_0128c_rules.json"
+    },
+    {
+        "id": "concept_0128e",
+        "name": "Concept 0128E - Hospital Visit same Day Dr in Same Group...",
+        "description": "Validation logic for Hospital Visit same Day Dr in Same Group Same Specialty  (1).",
+        "rule_file": "concept_0128e_rules.json"
+    },
+    {
+        "id": "concept_0132a",
+        "name": "Concept 0132A - Dupe_Same ID Same mbr same DOS same sub-...",
+        "description": "Validation logic for Dupe_Same ID Same mbr same DOS same sub-type same proc code same pat acct nbr same chrg.",
+        "rule_file": "concept_0132a_rules.json"
+    },
+    {
+        "id": "concept_0132n",
+        "name": "Concept 0132N - Dupe Line Level_Provider Name First Thre...",
+        "description": "Validation logic for Dupe Line Level_Provider Name First Three Positions Same_Updated.",
+        "rule_file": "concept_0132n_rules.json"
+    },
+    {
+        "id": "concept_0132w",
+        "name": "Concept 0132W - Dupe Detail Exact Dupe Processed on Same...",
+        "description": "Validation logic for Dupe Detail Exact Dupe Processed on Same Day and Same Patient Account Number.",
+        "rule_file": "concept_0132w_rules.json"
+    },
+    {
+        "id": "concept_0143a",
+        "name": "Concept 0143A - Welcome to Medicare and Annual Wellness ...",
+        "description": "Validation logic for Welcome to Medicare and Annual Wellness Codes PAIR_Updated  (1).",
+        "rule_file": "concept_0143a_rules.json"
+    },
+    {
+        "id": "concept_0171a",
+        "name": "Concept 0171A - Neonatology same day service...",
+        "description": "Validation logic for Neonatology same day service.",
+        "rule_file": "concept_0171a_rules.json"
+    },
+    {
+        "id": "concept_120b",
+        "name": "Concept 120B - Time Span Codes Calendar Month...",
+        "description": "Validation logic for Time Span Codes Calendar Month.",
+        "rule_file": "concept_120b_rules.json"
+    }
 ]

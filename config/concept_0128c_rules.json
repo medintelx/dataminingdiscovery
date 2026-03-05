@@ -1,0 +1,16 @@
+{
+    "concept_id": "concept_0128c",
+    "name": "Concept 0128C - Critical Care Codes  (2)...",
+    "description": "Auditing logic for Critical Care Codes  (2)",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "SRVC_PROV_TIN": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Critical Care Codes  (2) showing improper duplicate or conflicting billing."
+    }
+}

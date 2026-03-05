@@ -57,10 +57,11 @@ if st.session_state.get("current_concept_id") != selected_concept["id"]:
         for q in existing_q["questions"]:
             col = q["column"]
             st.session_state[f"q_text_{col}"] = q["text"]
-            # AUTOMATIC MIGRATION: Convert Free Text/Informational to Yes/No
+            # Maintain the actual type without auto-casting Free Text
             q_type = q.get("type", "Yes/No")
-            if q_type in ["Free Text", "Informational"]:
-                q_type = "Yes/No"
+            # Informational gets mapped to Free Text
+            if q_type == "Informational":
+                q_type = "Free Text"
             st.session_state[f"q_type_{col}"] = q_type
             
             if q.get("options"):
@@ -81,7 +82,8 @@ if st.sidebar.button("Reset Session"):
 # Main App
 #render_header("Concept-Based Claims Quiz", "Education & Calibration Platform")
 
-tab1, tab2, tab3, tab4 = st.tabs(["📚 Concept Overview", "🛠️ Questionnaire Builder", "🤖 Questionnaire", "✍️ Take Quiz"])
+# tab1, tab2, tab3, tab4 = st.tabs(["📚 Concept Overview", "🛠️ Questionnaire Builder", "🤖 Questionnaire", "✍️ Take Quiz"])
+tab1, tab3, tab4 = st.tabs(["📚 Concept Overview", "🤖 Questionnaire", "✍️ Take Quiz"])
 
 with tab1:
     st.header("Concept Details")
@@ -91,7 +93,7 @@ with tab1:
     st.subheader("Reference Rules")
     st.json(rules.get("overpayment_conditions", {}))
 
-with tab2:
+if False: # with tab2:
     st.header("Build Your Questionnaire")
      
     reader = SchemaReader()
@@ -197,24 +199,38 @@ with tab2:
             st.subheader("Configure Questions")
             
             q_builder = QuestionnaireBuilder(selected_concept["id"])
-            for f_name in selected_friendly:
+            
+            # Ensure unique elements internally to avoid list.index collision and rendering issues
+            unique_selected = []
+            seen = set()
+            for s in selected_friendly:
+                if s not in seen:
+                    unique_selected.append(s)
+                    seen.add(s)
+                    
+            for loop_idx, f_name in enumerate(unique_selected):
                 orig_name = col_options[f_name]
                 with st.container(border=True):
                     st.markdown(f"🖋️ **{f_name}** (`{orig_name}`)")
                     c1, c2 = st.columns([2, 1])
                     
                     # Use session state to persist values across reruns when adding/removing other columns
+                    # Append loop_idx to key to guarantee uniqueness if multiple friendly names map to the same original column
                     q_text = c1.text_input(
                         "Question text", 
                         value=st.session_state.get(f"q_text_{orig_name}", f"Is the {f_name} correct?"), 
-                        key=f"q_text_{orig_name}"
+                        key=f"q_text_{orig_name}_{loop_idx}"
                     )
+                    response_type_options = ["Yes/No", "Multiple Choice", "Free Text"]
+                    saved_type = st.session_state.get(f"q_type_{orig_name}", "Yes/No")
+                    if saved_type not in response_type_options:
+                        saved_type = "Yes/No"
+                        
                     q_type = c2.selectbox(
                         "Response Type", 
-                        ["Yes/No", "Multiple Choice"], 
-                        index=0 if st.session_state.get(f"q_type_{orig_name}") == "Yes/No" else 1,
-                        key=f"q_type_{orig_name}",
-                        help="Free Text is no longer supported for audits; use Yes/No for verification."
+                        response_type_options, 
+                        index=response_type_options.index(saved_type),
+                        key=f"q_type_{orig_name}_{loop_idx}"
                     )
                     
                     options = []
@@ -222,7 +238,7 @@ with tab2:
                         opts_str = st.text_input(
                             "Options (comma separated)", 
                             value=st.session_state.get(f"q_opts_{orig_name}", "Option 1, Option 2, Option 3"),
-                            key=f"q_opts_{orig_name}",
+                            key=f"q_opts_{orig_name}_{loop_idx}",
                             help="Enter choices separated by commas"
                         )
                         options = [opt.strip() for opt in opts_str.split(",") if opt.strip()]
@@ -248,16 +264,89 @@ with tab3:
         ui_schema_mgr = SchemaManager()
         st.success(f"✅ Active Questionnaire found for {selected_concept['name']}")
         
-        with st.expander("📋 Current Configuration"):
+        with st.expander("📋 Current Configuration (Editable)", expanded=True):
+            # Remove the form wrapper so changing Response Type triggers an immediate re-run to reveal Options.
+            updated_questions = []
+            has_notes_already = False
             for idx, q in enumerate(saved_q["questions"]):
                 with st.container(border=True):
                     friendly = ui_schema_mgr.get_friendly_name(q["column"])
-                    st.write(f"**Q{idx+1}:** {q['text']}")
-                    # Migration display: Show Yes/No instead of Free Text
-                    display_type = q['type']
-                    if display_type in ["Free Text", "Informational"]:
-                        display_type = "Yes/No"
-                    st.caption(f"Field: {friendly} ({q['column']}) | Type: {display_type}")
+                    col_title, col_btn = st.columns([4, 1])
+                    
+                    with col_title:
+                        st.markdown(f"**Q{idx+1}: Field: {friendly} (`{q['column']}`)**")
+                        
+                    # Initialize edit mode state for this specific question
+                    edit_key = f"edit_mode_{idx}"
+                    if edit_key not in st.session_state:
+                        st.session_state[edit_key] = False
+                        
+                    with col_btn:
+                        btn_col1, btn_col2 = st.columns(2)
+                        with btn_col1:
+                            if st.button("✏️", key=f"btn_edit_{idx}"):
+                                st.session_state[edit_key] = not st.session_state[edit_key]
+                                st.rerun()
+                        with btn_col2:
+                            if st.button("🗑️", key=f"btn_del_{idx}"):
+                                updated_questions = [q for i, q in enumerate(saved_q["questions"]) if i != idx]
+                                q_builder = QuestionnaireBuilder(selected_concept["id"])
+                                for q_item in updated_questions:
+                                    q_builder.add_question(q_item["column"], q_item["text"], q_item["type"], options=q_item["options"])
+                                q_builder.save_questionnaire()
+                                st.rerun()
+
+                    if st.session_state[edit_key]:    
+                        # --- EDIT MODE ---
+                        new_text = st.text_input("Question Text", value=q.get("text", ""), key=f"edit_q_text_{idx}")
+                        
+                        type_opts = ["Yes/No", "Multiple Choice", "Free Text"]
+                        curr_type = q.get("type", "Yes/No")
+                        if curr_type == "Informational": curr_type = "Free Text"
+                        if curr_type not in type_opts: curr_type = "Yes/No"
+                        
+                        new_type = st.selectbox("Response Type", type_opts, index=type_opts.index(curr_type), key=f"edit_q_type_{idx}")
+                        
+                        new_opts = q.get("options", [])
+                        if new_type == "Multiple Choice":
+                            opts_str = st.text_input("Options (comma separated)", value=", ".join(new_opts), key=f"edit_q_opts_{idx}")
+                            new_opts = [o.strip() for o in opts_str.split(",") if o.strip()]
+                            
+                        updated_questions.append({
+                            "column": q["column"],
+                            "text": new_text,
+                            "type": new_type,
+                            "options": new_opts
+                        })
+                    else:
+                        # --- READ-ONLY MODE ---
+                        st.write(f"{q.get('text', 'No question text provided')}")
+                        display_type = q.get("type", "Yes/No")
+                        if display_type == "Multiple Choice":
+                            opts = q.get("options", [])
+                            st.caption(f"Type: {display_type} | Options: {', '.join(opts) if opts else 'None'}")
+                        else:
+                            st.caption(f"Type: {display_type}")
+                            
+                        # Keep the original values in the updated list if not editing
+                        updated_questions.append(q)
+            
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                submitted = st.button("💾 Save Changes to Questionnaire", use_container_width=True)
+            with col2:
+                add_blank = st.button("➕ Add Blank Question", use_container_width=True)
+                
+            if submitted or add_blank:
+                q_builder = QuestionnaireBuilder(selected_concept["id"])
+                for q_item in updated_questions:
+                    q_builder.add_question(q_item["column"], q_item["text"], q_item["type"], options=q_item["options"])
+                
+                if add_blank:
+                     q_builder.add_question("OTHER", "New Custom Question", "Yes/No", options=[])
+                     
+                q_builder.save_questionnaire()
+                st.rerun()
         
         if st.button("🤖 Regenerate (Overwrites current)", use_container_width=True):
             show_gen_form = True
@@ -280,26 +369,57 @@ with tab3:
                         st.success("AI Generation Complete!")
 
     if st.session_state.get("ai_suggestions"):
-        st.subheader("🤖 AI Preview (Suggested)")
+        st.subheader("🤖 AI Preview (Editable)")
         schema_mgr = SchemaManager()
         
-        with st.form("auto_save_form"):
-            for i, sug in enumerate(st.session_state.ai_suggestions):
-                if not isinstance(sug, dict): continue
-                with st.container(border=True):
+        # Removed st.form to allow interactive re-renders (like showing options only when Multiple Choice is selected)
+        for i, sug in enumerate(st.session_state.ai_suggestions):
+            if not isinstance(sug, dict): continue
+            with st.container(border=True):
+                col1, col2 = st.columns([4, 1])
+                with col1:
                     col_name = sug.get("column", "Unknown")
                     friendly = schema_mgr.get_friendly_name(col_name)
-                    q_text = sug.get('text', 'No question')
-                    q_type = sug.get('type', 'Unknown')
                     st.markdown(f"📍 **Field:** {friendly} (`{col_name}`)")
-                    if q_type == "Multiple Choice":
-                        opts = sug.get("options", ["Option 1"])
-                        st.selectbox(q_text, opts, disabled=True, key=f"ai_gen_m_{i}")
-                    else:
-                        # Default all others (including any accidental Free Text) to Yes/No
-                        st.radio(q_text, ["Yes", "No"], disabled=True, key=f"ai_gen_y_{i}")
-            
-            if st.form_submit_button("✅ Apply & Save This Questionnaire", use_container_width=True):
+                with col2:
+                    if st.button("🗑️", key=f"ai_gen_del_{i}"):
+                        st.session_state.ai_suggestions.pop(i)
+                        st.rerun()
+                
+                # Editable question text
+                new_text = st.text_input("Question Text", value=sug.get('text', 'No question'), key=f"ai_gen_text_{i}")
+                
+                # Editable Type
+                type_opts = ["Yes/No", "Multiple Choice", "Free Text"]
+                curr_type = sug.get('type', 'Yes/No')
+                if curr_type not in type_opts:
+                    curr_type = "Yes/No"
+                    
+                new_type = st.selectbox("Response Type", type_opts, index=type_opts.index(curr_type), key=f"ai_gen_type_{i}")
+                
+                # Editable Options (if Multiple Choice)
+                new_opts = sug.get("options", [])
+                if new_type == "Multiple Choice":
+                    opts_str = st.text_input("Options (comma separated)", value=", ".join(new_opts), key=f"ai_gen_opts_{i}")
+                    new_opts = [o.strip() for o in opts_str.split(",") if o.strip()]
+                
+                # Update the suggestion in place so the button picks up the latest state
+                sug['text'] = new_text
+                sug['type'] = new_type
+                sug['options'] = new_opts
+        
+        st.divider()
+        st.markdown("### Add Custom Question")
+        if st.button("➕ Add Blank Question"):
+            st.session_state.ai_suggestions.append({
+                "column": "OTHER",
+                "text": "New Custom Question",
+                "type": "Yes/No",
+                "options": []
+            })
+            st.rerun()
+        
+        if st.button("✅ Apply & Save This Questionnaire", use_container_width=True):
                 q_builder = QuestionnaireBuilder(selected_concept["id"])
                 for sug in st.session_state.ai_suggestions:
                     if isinstance(sug, dict):

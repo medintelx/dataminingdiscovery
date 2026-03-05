@@ -1,0 +1,12 @@
+{
+    "concept_id": "concept_0088d",
+    "name": "Concept 0088D - Dupe Line Level Same Procedure Code Same NPI One With Modifi...",
+    "description": "Auditing logic for Dupe Line Level Same Procedure Code Same NPI One With Modifier",
+    "overpayment_conditions": {
+        "general_rule": "Refer to the dataset for explicit criteria."
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Same Procedure Code Same NPI One With Modifier showing improper duplicate or conflicting billing."
+    }
+}

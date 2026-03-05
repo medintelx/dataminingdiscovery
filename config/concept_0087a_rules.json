@@ -1,0 +1,18 @@
+{
+    "concept_id": "concept_0087a",
+    "name": "Concept 0087A - Dupe Line Level Same Charge One Par One NonPar...",
+    "description": "Auditing logic for Dupe Line Level Same Charge One Par One NonPar",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "CLCL_ID": "Must be Different",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same base 5",
+        "CONSIDER_CHG": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Same Charge One Par One NonPar showing improper duplicate or conflicting billing."
+    }
+}

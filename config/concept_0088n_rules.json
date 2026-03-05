@@ -1,0 +1,17 @@
+{
+    "concept_id": "concept_0088n",
+    "name": "Concept 0088N - Dupe Line Level Office Visit Same NPI...",
+    "description": "Auditing logic for Dupe Line Level Office Visit Same NPI",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "SRVC_PROV_TIN": "Must be Same",
+        "PRCP_ID": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Office Visit Same NPI showing improper duplicate or conflicting billing."
+    }
+}

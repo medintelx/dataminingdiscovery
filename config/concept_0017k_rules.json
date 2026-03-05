@@ -1,0 +1,21 @@
+{
+    "concept_id": "concept_0017k",
+    "name": "Concept 0017K - Dupe Line Level Same Charge Same Tax ID Different NPI...",
+    "description": "Auditing logic for Dupe Line Level Same Charge Same Tax ID Different NPI",
+    "overpayment_conditions": {
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "CLCL_ID": "Must be Different",
+        "BILL_TYPE_CODE": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same - and  exclude procedures:  9923%, 97%, 9922%, 9929%",
+        "CHG_AMT": "Must be Same",
+        "ALLOW": "Must be Same",
+        "SRVC_PROV_TIN": "Must be Same",
+        "PRPR_NPI": "Must be Different"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Same Charge Same Tax ID Different NPI showing improper duplicate or conflicting billing."
+    }
+}

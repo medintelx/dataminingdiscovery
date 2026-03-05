@@ -1,0 +1,21 @@
+{
+    "concept_id": "concept_0088l",
+    "name": "Concept 0088L - Dupe Line Level Same Ln Chrg Same Claim Chrg Same DOS Same P...",
+    "description": "Auditing logic for Dupe Line Level Same Ln Chrg Same Claim Chrg Same DOS Same Proc Code Same NPI Same Tax ID",
+    "overpayment_conditions": {
+        "CLCL_ID": "Must be Different",
+        "CL_SUB_TYPE": "Must be Same",
+        "BUSINESS_LINE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same Base 5",
+        "SRVC_PROV_TIN": "Must be Same",
+        "CHG_AMT": "Must be Same",
+        "PRPR_NPI": "Must be Same",
+        "CLCL_TOT_CHG": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Same Ln Chrg Same Claim Chrg Same DOS Same Proc Code Same NPI Same Tax ID showing improper duplicate or conflicting billing."
+    }
+}

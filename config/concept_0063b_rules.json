@@ -1,0 +1,17 @@
+{
+    "concept_id": "concept_0063b",
+    "name": "Concept 0063B - Dupe Same J Code Dispensed by Same Medical Provider...",
+    "description": "Auditing logic for Dupe Same J Code Dispensed by Same Medical Provider",
+    "overpayment_conditions": {
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Begins with J and  Same as other within pair",
+        "PRPR_ID": "Must be Same",
+        "CLM_ROW_ID": "Must be Different"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Same J Code Dispensed by Same Medical Provider showing improper duplicate or conflicting billing."
+    }
+}

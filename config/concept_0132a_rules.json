@@ -1,0 +1,19 @@
+{
+    "concept_id": "concept_0132a",
+    "name": "Concept 0132A - Dupe_Same ID Same mbr same DOS same sub-type same proc code ...",
+    "description": "Auditing logic for Dupe_Same ID Same mbr same DOS same sub-type same proc code same pat acct nbr same chrg",
+    "overpayment_conditions": {
+        "CLCL_ID": "Must be Different",
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_FIRST_NAME": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same Base 5",
+        "CHG_AMT": "Must be Same",
+        "PA_ACCT_NO": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe_Same ID Same mbr same DOS same sub-type same proc code same pat acct nbr same chrg showing improper duplicate or conflicting billing."
+    }
+}

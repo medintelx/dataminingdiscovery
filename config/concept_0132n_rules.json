@@ -1,0 +1,20 @@
+{
+    "concept_id": "concept_0132n",
+    "name": "Concept 0132N - Dupe Line Level_Provider Name First Three Positions Same_Upd...",
+    "description": "Auditing logic for Dupe Line Level_Provider Name First Three Positions Same_Updated",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "MEME_FIRST_NAME": "Must be Same",
+        "MEME_LAST_NAME": "Must be Same",
+        "CLCL_ID": "Must be Different",
+        "PRPR_NAME": "Must be Same first three letters",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same Base 5",
+        "CHG_AMT": "Must be Same",
+        "SRVC_PROV_TIN": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level_Provider Name First Three Positions Same_Updated showing improper duplicate or conflicting billing."
+    }
+}

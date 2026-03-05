@@ -1,0 +1,17 @@
+{
+    "concept_id": "concept_0017b",
+    "name": "Concept 0017B - Dupe Line Level Same Practitioner Version 2...",
+    "description": "Auditing logic for Dupe Line Level Same Practitioner Version 2",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same base 5",
+        "PRCP_ID": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Same Practitioner Version 2 showing improper duplicate or conflicting billing."
+    }
+}

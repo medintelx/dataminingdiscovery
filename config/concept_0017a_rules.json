@@ -1,0 +1,17 @@
+{
+    "concept_id": "concept_0017a",
+    "name": "Concept 0017A - Dupe Line Level Different Practitioner_TIN 2...",
+    "description": "Auditing logic for Dupe Line Level Different Practitioner_TIN 2",
+    "overpayment_conditions": {
+        "CL_SUB_TYPE": "Must be Same",
+        "SBSB_ID": "Must be Same",
+        "MEME_SFX": "Must be Same",
+        "FROM_DT": "Must be Same",
+        "IPCD_ID": "Must be Same base 5",
+        "SRVC_PROV_TIN": "Must be Same"
+    },
+    "explanation_templates": {
+        "valid": "The claims are valid based on differing key identifiers.",
+        "duplicate": "Criteria met for Dupe Line Level Different Practitioner_TIN 2 showing improper duplicate or conflicting billing."
+    }
+}
