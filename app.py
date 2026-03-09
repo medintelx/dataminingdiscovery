@@ -79,25 +79,24 @@ if st.sidebar.button("Reset Session"):
     st.session_state.clear()
     st.rerun()
 
-st.sidebar.divider()
-st.sidebar.subheader("Data Schema Sync")
+# st.sidebar.divider()
+# st.sidebar.subheader("Data Schema Sync")
 reader = SchemaReader()
 default_table = os.getenv("CLICKHOUSE_TABLE", "ClaimsInscope")
 
 if "table_name_input" not in st.session_state:
     st.session_state.table_name_input = default_table
 
-table_name = st.sidebar.text_input("ClickHouse Table Name", value=st.session_state.table_name_input, key="table_input_sync")
+table_name = st.session_state.table_name_input
 
 if ("available_columns" not in st.session_state or 
     st.session_state.get("last_fetched_table") != table_name):
     
-    with st.sidebar.status(f"🔍 Syncing schema for {table_name}..."):
-        cols = reader.get_table_schema(table_name)
-        st.session_state.available_columns = cols
-        st.session_state.last_fetched_table = table_name
-        st.session_state.table_name_input = table_name
-        st.write("✅ Schema synced successfully!")
+    # Silent sync in background without sidebar status
+    cols = reader.get_table_schema(table_name)
+    st.session_state.available_columns = cols
+    st.session_state.last_fetched_table = table_name
+    st.session_state.table_name_input = table_name
 
 # Main App
 #render_header("Concept-Based Claims Quiz", "Education & Calibration Platform")
