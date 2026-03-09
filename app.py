@@ -334,7 +334,7 @@ with tab3:
                         updated_questions.append(q)
             
             st.divider()
-            st.divider()
+   
             
             current_columns = []
             for q in updated_questions:
