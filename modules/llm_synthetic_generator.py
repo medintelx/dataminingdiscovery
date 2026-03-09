@@ -46,8 +46,8 @@ class LLMSyntheticGenerator:
             required_cols.append("CLCL_ID")
 
         # Advanced Medical Field Bridge
+        from modules.schema_manager import MAPPING, SchemaManager
         schema_mgr = SchemaManager()
-        from modules.schema_manager import MAPPING
         
         # 1. Build a massive bridge: All Friendly Names -> Internal Names
         global_bridge = {}
@@ -71,23 +71,29 @@ class LLMSyntheticGenerator:
         map_str = "\n".join([f"- {internal}: {friendly}" for internal, friendly in column_map.items()])
 
         prompt = f"""
-        ACT AS A MEDICAL CLAIMS DATABASE. NO CONVERSATION. JSON ONLY.
-        Generate {count} synthetic healthcare claim records.
+        ACT AS A MEDICAL CLAIMS DATABASE EXPERT. NO CONVERSATION. JSON ONLY.
+        Generate {count} HIGHLY REALISTIC synthetic healthcare claim records.
         
         CONCEPT: {self.rules.get('name')}
+        CONCEPT RULES TO IMPLEMENT: {json.dumps(self.rules.get('overpayment_conditions', {}))}
+        
+        CRITICAL GENERATION INSTRUCTIONS:
+        1. DO NOT use generic fake data like "Member_1" or "123". Use extremely realistic medical data (actual HCPCS/CPT codes, actual standard modifiers like RT/LT/59, realistic NPIs).
+        2. Financials must be realistic. Allow amounts should be mathematically sound relative to Charge amounts.
+        3. Dates must be logically sequenced and valid.
+        4. Data must explicitly test the boundaries of the rules provided above (e.g., generate one claim that perfectly fails the rules, and one that perfectly passes the rules using realistic CPT code variations).
         
         STRICT SCHEMA (Use these exact INTERNAL names as keys):
-        - CLCL_ID (MANDATORY)
+        - CLCL_ID (MANDATORY, e.g. "CLM-2024-88492A")
         {map_str}
         
         JSON STRUCTURE:
         {{
           "claims": [
             {{
-              "CLCL_ID": "CLM1002",
-              "PAID_DT": "2024-01-01",
-              "...": "...",
-              "ground_truth": {{"is_overpayment": bool, "explanation": "..."}}
+              "CLCL_ID": "CLM-2024-88492A",
+              "PAID_DT": "2024-03-15",
+              "ground_truth": {{"is_overpayment": true, "explanation": "Detailed explanation of why this specific claim passed or failed the rules based on the realistic codes used."}}
             }}
           ]
         }}
@@ -100,8 +106,7 @@ class LLMSyntheticGenerator:
                 messages=[
                     {"role": "system", "content": "You are a database. You strictly output JSON mapping to the requested internal keys."},
                     {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"}
+                ]
             )
             
             raw_data = json.loads(response.choices[0].message.content)
@@ -174,16 +179,16 @@ class LLMSyntheticGenerator:
         4. Always return EXACTLY 2 claim examples based on the generated questionnaire.
         
         OUTPUT JSON EXAMPLE:
-        {
+        {{
           "questions": [
-            {"column": "CLCL_ID", "text": "Confirm Claim under review?", "type": "Yes/No"},
-            {"column": "IPCD_MOD1_DER", "text": "Is modifier correct per policy?", "type": "Yes/No"}
+            {{"column": "CLCL_ID", "text": "Confirm Claim under review?", "type": "Yes/No"}},
+            {{"column": "IPCD_MOD1_DER", "text": "Is modifier correct per policy?", "type": "Yes/No"}}
           ],
           "examples": [
-            {"CLCL_ID": "CLM-001", "IPCD_MOD1_DER": "59"},
-            {"CLCL_ID": "CLM-002", "IPCD_MOD1_DER": "RT"}
+            {{"CLCL_ID": "CLM-001", "IPCD_MOD1_DER": "59"}},
+            {{"CLCL_ID": "CLM-002", "IPCD_MOD1_DER": "RT"}}
           ]
-        }
+        }}
         """
 
         try:
@@ -193,8 +198,7 @@ class LLMSyntheticGenerator:
                 messages=[
                     {"role": "system", "content": "You are a senior healthcare audit expert. You output strictly JSON containing 'questions' and 'examples' lists."},
                     {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"}
+                ]
             )
             
             raw_data = json.loads(response.choices[0].message.content)
@@ -219,13 +223,37 @@ class LLMSyntheticGenerator:
             return [], []
 
     def _fallback_generate(self, columns, count):
-        # Very basic fallback if LLM/API fails
+        # Realistic fallback mapping similar to Standard Rule-based SyntheticDataGenerator in the quiz section
         data = []
         gt = []
+        import datetime
         for i in range(count):
-            row = {col: f"FAKE_{col}_{i}" for col in columns}
-            if "Claim_ID" in columns: row["Claim_ID"] = f"CLM{1000+i}"
-            if "PAID_AMT" in columns: row["PAID_AMT"] = round(random.uniform(50, 500), 2)
+            row = {}
+            for col in columns:
+                col_upper = str(col).strip().upper()
+                if "ID" in col_upper and "CL" in col_upper:
+                    row[col] = f"CLM-{random.randint(20000, 99999)}"
+                elif "MEM" in col_upper:
+                    row[col] = f"MEM_88{i}"
+                elif "PRV" in col_upper or "PRPR" in col_upper:
+                    row[col] = f"PROV_{99+i}"
+                elif "DT" in col_upper or "DATE" in col_upper:
+                    row[col] = (datetime.datetime(2024, 1, 15) + datetime.timedelta(days=random.randint(0, 100))).strftime("%Y-%m-%d")
+                elif "MOD" in col_upper:
+                    row[col] = random.choice(["QX", "RT", "LT", "59", "25"])
+                elif "AMT" in col_upper or "PAID" in col_upper:
+                    row[col] = round(random.uniform(50.00, 500.00), 2)
+                elif "UNIT" in col_upper:
+                    row[col] = random.choice([1, 2, 3])
+                elif "STS" in col_upper or "STATUS" in col_upper:
+                    row[col] = "Paid"
+                elif "PROC" in col_upper or "IPCD" in col_upper or "CPT" in col_upper:
+                    row[col] = random.choice(["00100", "99213", "99214", "A0425"])
+                elif "DIAG" in col_upper or "ICD" in col_upper:
+                    row[col] = random.choice(["J01.90", "E11.9", "I10"])
+                else:
+                    row[col] = f"SAMPLE_{col}_{i}"
+            
             data.append(row)
-            gt.append({"index": i, "is_overpayment": random.choice([True, False]), "explanation": "Fallback random data"})
+            gt.append({"index": i, "is_overpayment": random.choice([True, False]), "explanation": "Generated from local fallback standard logic"})
         return pd.DataFrame(data), gt

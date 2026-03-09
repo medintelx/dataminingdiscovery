@@ -334,19 +334,38 @@ with tab3:
                         updated_questions.append(q)
             
             st.divider()
-            st.markdown("### Editable Claim Examples")
-            updated_examples = []
-            for ex_idx, example in enumerate(saved_q.get("examples", [])):
-                st.markdown(f"**Example {ex_idx+1}**")
-                new_ex = {}
-                # Create a simple grid
-                cols = st.columns(3)
-                col_counter = 0
-                for k, v in example.items():
-                    with cols[col_counter % 3]:
-                        new_ex[k] = st.text_input(k, value=str(v), key=f"edit_ex_{ex_idx}_{k}")
-                    col_counter += 1
-                updated_examples.append(new_ex)
+            st.divider()
+            
+            current_columns = []
+            for q in updated_questions:
+                if q["column"] != "OTHER" and q["column"] not in current_columns:
+                    current_columns.append(q["column"])
+            
+            st.markdown("### Claim Examples")
+            
+            saved_examples = st.session_state.get(f"saved_ex_override_{selected_concept['id']}", saved_q.get("examples", []))
+            
+            if not saved_examples and current_columns:
+                rules = load_rules(selected_concept["rule_file"])
+                gen = LLMSyntheticGenerator(rules)
+                with st.spinner("Auto-generating synthetic examples..."):
+                    new_df, _ = gen.generate_quiz_data(current_columns, 2)
+                    saved_examples = new_df[current_columns].to_dict('records')
+                    st.session_state[f"saved_ex_override_{selected_concept['id']}"] = saved_examples
+
+            df_examples = pd.DataFrame(saved_examples)
+            for c in current_columns:
+                if c not in df_examples.columns:
+                    df_examples[c] = ""
+            df_examples = df_examples[current_columns]
+            
+            friendly_cols = {col: ui_schema_mgr.get_friendly_name(col) for col in current_columns}
+            display_df = df_examples.rename(columns=friendly_cols)
+            
+            edited_df = st.data_editor(display_df, num_rows="dynamic", use_container_width=True, key="saved_examples_editor")
+            
+            reverse_friendly_cols = {v: k for k, v in friendly_cols.items()}
+            updated_examples = edited_df.rename(columns=reverse_friendly_cols).to_dict('records')
 
             st.divider()
             col1, col2 = st.columns([1, 1])
@@ -365,6 +384,8 @@ with tab3:
                      
                 q_builder.set_examples(updated_examples)
                 q_builder.save_questionnaire()
+                if f"saved_ex_override_{selected_concept['id']}" in st.session_state:
+                    del st.session_state[f"saved_ex_override_{selected_concept['id']}"]
                 st.rerun()
         
         # if st.button("🤖 Regenerate (Overwrites current)", use_container_width=True):
@@ -441,21 +462,36 @@ with tab3:
             st.rerun()
             
         st.divider()
-        st.markdown("### Generated Claim Examples (Editable)")
+        st.divider()
+        st.markdown("### Generated Claim Examples (Tabular)")
         ai_examples = st.session_state.get("ai_examples", [])
-        if not ai_examples:
-            st.info("No examples found.")
-        updated_ai_examples = []
-        for ex_idx, example in enumerate(ai_examples):
-            st.markdown(f"**Example {ex_idx+1}**")
-            new_ex = {}
-            cols = st.columns(3)
-            col_counter = 0
-            for k, v in example.items():
-                with cols[col_counter % 3]:
-                    new_ex[k] = st.text_input(k, value=str(v), key=f"ai_ex_{ex_idx}_{k}")
-                col_counter += 1
-            updated_ai_examples.append(new_ex)
+        
+        current_columns = []
+        for sug in st.session_state.ai_suggestions:
+            if isinstance(sug, dict) and sug.get("column", "OTHER") != "OTHER" and sug["column"] not in current_columns:
+                current_columns.append(sug["column"])
+                
+        if not ai_examples and current_columns:
+            rules = load_rules(selected_concept["rule_file"])
+            gen = LLMSyntheticGenerator(rules)
+            with st.spinner("Auto-generating synthetic examples..."):
+                new_df, _ = gen.generate_quiz_data(current_columns, 2)
+                ai_examples = new_df[current_columns].to_dict('records')
+                st.session_state.ai_examples = ai_examples
+
+        df_examples = pd.DataFrame(ai_examples)
+        for c in current_columns:
+            if c not in df_examples.columns:
+                df_examples[c] = ""
+        df_examples = df_examples[current_columns]
+        
+        friendly_cols = {col: schema_mgr.get_friendly_name(col) for col in current_columns}
+        display_df = df_examples.rename(columns=friendly_cols)
+        
+        edited_df = st.data_editor(display_df, num_rows="dynamic", use_container_width=True, key="ai_preview_examples_editor")
+        
+        reverse_friendly_cols = {v: k for k, v in friendly_cols.items()}
+        updated_ai_examples = edited_df.rename(columns=reverse_friendly_cols).to_dict('records')
         st.session_state.ai_examples = updated_ai_examples
         
         if st.button("✅ Apply & Save This Questionnaire", use_container_width=True):
