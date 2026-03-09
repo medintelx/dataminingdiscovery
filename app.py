@@ -79,6 +79,26 @@ if st.sidebar.button("Reset Session"):
     st.session_state.clear()
     st.rerun()
 
+st.sidebar.divider()
+st.sidebar.subheader("Data Schema Sync")
+reader = SchemaReader()
+default_table = os.getenv("CLICKHOUSE_TABLE", "ClaimsInscope")
+
+if "table_name_input" not in st.session_state:
+    st.session_state.table_name_input = default_table
+
+table_name = st.sidebar.text_input("ClickHouse Table Name", value=st.session_state.table_name_input, key="table_input_sync")
+
+if ("available_columns" not in st.session_state or 
+    st.session_state.get("last_fetched_table") != table_name):
+    
+    with st.sidebar.status(f"🔍 Syncing schema for {table_name}..."):
+        cols = reader.get_table_schema(table_name)
+        st.session_state.available_columns = cols
+        st.session_state.last_fetched_table = table_name
+        st.session_state.table_name_input = table_name
+        st.write("✅ Schema synced successfully!")
+
 # Main App
 #render_header("Concept-Based Claims Quiz", "Education & Calibration Platform")
 
@@ -95,25 +115,7 @@ with tab1:
 
 if False: # with tab2:
     st.header("Build Your Questionnaire")
-     
-    reader = SchemaReader()
-    default_table = os.getenv("CLICKHOUSE_TABLE", "ClaimsInscope")
-    
-    # Auto-initialize columns if table name matches default or exists in session
-    if "table_name_input" not in st.session_state:
-        st.session_state.table_name_input = default_table
 
-    table_name = st.text_input("ClickHouse Table Name", value=st.session_state.table_name_input, key="table_input_sync")
-
-    # If table name changed or columns not loaded, fetch automatically
-    if ("available_columns" not in st.session_state or 
-        st.session_state.get("last_fetched_table") != table_name):
-        
-        with st.spinner(f"🔍 Syncing schema for {table_name}..."):
-            cols = reader.get_table_schema(table_name)
-            st.session_state.available_columns = cols
-            st.session_state.last_fetched_table = table_name
-            st.session_state.table_name_input = table_name
 
     if "available_columns" in st.session_state:
         # Pre-defined groups for easier selection
@@ -331,6 +333,22 @@ with tab3:
                         # Keep the original values in the updated list if not editing
                         updated_questions.append(q)
             
+            st.divider()
+            st.markdown("### Editable Claim Examples")
+            updated_examples = []
+            for ex_idx, example in enumerate(saved_q.get("examples", [])):
+                st.markdown(f"**Example {ex_idx+1}**")
+                new_ex = {}
+                # Create a simple grid
+                cols = st.columns(3)
+                col_counter = 0
+                for k, v in example.items():
+                    with cols[col_counter % 3]:
+                        new_ex[k] = st.text_input(k, value=str(v), key=f"edit_ex_{ex_idx}_{k}")
+                    col_counter += 1
+                updated_examples.append(new_ex)
+
+            st.divider()
             col1, col2 = st.columns([1, 1])
             with col1:
                 submitted = st.button("💾 Save Changes to Questionnaire", use_container_width=True)
@@ -345,12 +363,14 @@ with tab3:
                 if add_blank:
                      q_builder.add_question("OTHER", "New Custom Question", "Yes/No", options=[])
                      
+                q_builder.set_examples(updated_examples)
                 q_builder.save_questionnaire()
                 st.rerun()
         
-        if st.button("🤖 Regenerate (Overwrites current)", use_container_width=True):
-            show_gen_form = True
-            st.session_state.ai_suggestions = None
+        # if st.button("🤖 Regenerate (Overwrites current)", use_container_width=True):
+        #     show_gen_form = True
+        #     st.session_state.ai_suggestions = None
+        #     st.session_state.ai_examples = None
     else:
         st.info("No questionnaire found. Let AI analyze your rules and schema to build an optimized audit form.")
         show_gen_form = True
@@ -363,8 +383,9 @@ with tab3:
                 rules = load_rules(selected_concept["rule_file"])
                 gen = LLMSyntheticGenerator(rules)
                 with st.spinner("Analyzing rules..."):
-                    suggestions = gen.generate_suggested_questionnaire(st.session_state.available_columns)
+                    suggestions, examples = gen.generate_suggested_questionnaire(st.session_state.available_columns)
                     st.session_state.ai_suggestions = suggestions
+                    st.session_state.ai_examples = examples
                     if suggestions:
                         st.success("AI Generation Complete!")
 
@@ -418,15 +439,35 @@ with tab3:
                 "options": []
             })
             st.rerun()
+            
+        st.divider()
+        st.markdown("### Generated Claim Examples (Editable)")
+        ai_examples = st.session_state.get("ai_examples", [])
+        if not ai_examples:
+            st.info("No examples found.")
+        updated_ai_examples = []
+        for ex_idx, example in enumerate(ai_examples):
+            st.markdown(f"**Example {ex_idx+1}**")
+            new_ex = {}
+            cols = st.columns(3)
+            col_counter = 0
+            for k, v in example.items():
+                with cols[col_counter % 3]:
+                    new_ex[k] = st.text_input(k, value=str(v), key=f"ai_ex_{ex_idx}_{k}")
+                col_counter += 1
+            updated_ai_examples.append(new_ex)
+        st.session_state.ai_examples = updated_ai_examples
         
         if st.button("✅ Apply & Save This Questionnaire", use_container_width=True):
                 q_builder = QuestionnaireBuilder(selected_concept["id"])
                 for sug in st.session_state.ai_suggestions:
                     if isinstance(sug, dict):
                         q_builder.add_question(sug.get("column", "OTHER"), sug.get("text"), sug.get("type"), options=sug.get("options", []))
+                q_builder.set_examples(st.session_state.get("ai_examples", []))
                 q_builder.save_questionnaire()
                 st.session_state.selected_friendly_list = [schema_mgr.get_friendly_name(s["column"]) for s in st.session_state.ai_suggestions if isinstance(s, dict)]
                 st.session_state.ai_suggestions = None
+                st.session_state.ai_examples = None
                 st.rerun()
 
 with tab4:

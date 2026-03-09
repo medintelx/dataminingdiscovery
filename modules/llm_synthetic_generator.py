@@ -171,14 +171,19 @@ class LLMSyntheticGenerator:
         1. Select 5-7 relevant columns.
         2. DO NOT use "Free Text" or "Informational" types. Use only "Yes/No" or "Multiple Choice".
         3. For identification fields like CLCL_ID, ask a verification question like "Is this the correct claim?".
-        4. Always end with "Other" (OTHER) for the audit final determination.
-
+        4. Always return EXACTLY 2 claim examples based on the generated questionnaire.
+        
         OUTPUT JSON EXAMPLE:
-        [
-          {{"column": "CLCL_ID", "text": "Confirm Claim under review?", "type": "Yes/No"}},
-          {{"column": "IPCD_MOD1_DER", "text": "Is modifier correct per policy?", "type": "Yes/No"}},
-          {{"column": "OTHER", "text": "Final Determination", "type": "Multiple Choice", "options": ["Allowed", "Denied"]}}
-        ]
+        {
+          "questions": [
+            {"column": "CLCL_ID", "text": "Confirm Claim under review?", "type": "Yes/No"},
+            {"column": "IPCD_MOD1_DER", "text": "Is modifier correct per policy?", "type": "Yes/No"}
+          ],
+          "examples": [
+            {"CLCL_ID": "CLM-001", "IPCD_MOD1_DER": "59"},
+            {"CLCL_ID": "CLM-002", "IPCD_MOD1_DER": "RT"}
+          ]
+        }
         """
 
         try:
@@ -186,27 +191,16 @@ class LLMSyntheticGenerator:
             response = self.client.chat.completions.create(
                 model=self.deployment,
                 messages=[
-                    {"role": "system", "content": "You are a senior healthcare audit expert. You strictly use Yes/No or Multiple Choice questions. No Free Text."},
+                    {"role": "system", "content": "You are a senior healthcare audit expert. You output strictly JSON containing 'questions' and 'examples' lists."},
                     {"role": "user", "content": prompt}
-                ]
+                ],
+                response_format={"type": "json_object"}
             )
             
-            content = response.choices[0].message.content
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            elif "```" in content:
-                content = content.split("```")[1].split("```")[0].strip()
+            raw_data = json.loads(response.choices[0].message.content)
             
-            raw_data = json.loads(content.strip())
-            
-            suggestions = []
-            if isinstance(raw_data, list):
-                suggestions = raw_data
-            elif isinstance(raw_data, dict):
-                for val in raw_data.values():
-                    if isinstance(val, list):
-                        suggestions = val
-                        break
+            suggestions = raw_data.get("questions", [])
+            examples = raw_data.get("examples", [])
 
             final_suggestions = []
             if isinstance(suggestions, list):
@@ -218,11 +212,11 @@ class LLMSyntheticGenerator:
                             item["type"] = "Yes/No"
                         final_suggestions.append(item)
                 
-            return final_suggestions
+            return final_suggestions, examples
 
         except Exception as e:
             print(f"Auto-questionnaire generation failed: {e}")
-            return []
+            return [], []
 
     def _fallback_generate(self, columns, count):
         # Very basic fallback if LLM/API fails

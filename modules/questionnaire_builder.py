@@ -20,9 +20,16 @@ class QuestionnaireBuilder:
                 CREATE TABLE IF NOT EXISTS questionnaires (
                     concept_id TEXT PRIMARY KEY,
                     questions_json TEXT,
+                    examples_json TEXT,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
             ''')
+            # Try adding the column if upgrading from an older schema version
+            try:
+                cursor.execute('ALTER TABLE questionnaires ADD COLUMN examples_json TEXT')
+            except sqlite3.OperationalError:
+                pass
+                
             conn.commit()
 
             cursor.execute('''
@@ -44,18 +51,23 @@ class QuestionnaireBuilder:
         }
         self.questions.append(question)
 
+    def set_examples(self, examples):
+        self.examples = examples
+
     def save_questionnaire(self):
         """Saves or updates the questionnaire in the SQLite database."""
         questions_json = json.dumps(self.questions)
+        examples_json = json.dumps(getattr(self, 'examples', []))
         with sqlite3.connect(self.DB_PATH) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO questionnaires (concept_id, questions_json, updated_at)
-                VALUES (?, ?, CURRENT_TIMESTAMP)
+                INSERT INTO questionnaires (concept_id, questions_json, examples_json, updated_at)
+                VALUES (?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(concept_id) DO UPDATE SET
                     questions_json = excluded.questions_json,
+                    examples_json = excluded.examples_json,
                     updated_at = CURRENT_TIMESTAMP
-            ''', (self.concept_id, questions_json))
+            ''', (self.concept_id, questions_json, examples_json))
             conn.commit()
         return f"Database ({self.concept_id})"
 
@@ -103,15 +115,24 @@ class QuestionnaireBuilder:
             
         with sqlite3.connect(QuestionnaireBuilder.DB_PATH) as conn:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT questions_json FROM questionnaires WHERE concept_id = ?", 
-                (concept_id,)
-            )
-            row = cursor.fetchone()
-            
-        if row:
-            return {
-                "concept_id": concept_id,
-                "questions": json.loads(row[0])
-            }
+            # Fetch both columns, catching missing examples_json just in case schema update is pending
+            try:
+                cursor.execute("SELECT questions_json, examples_json FROM questionnaires WHERE concept_id = ?", (concept_id,))
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        "concept_id": concept_id,
+                        "questions": json.loads(row[0] or "[]"),
+                        "examples": json.loads(row[1] or "[]")
+                    }
+            except sqlite3.OperationalError:
+                # Fallback if old schema
+                cursor.execute("SELECT questions_json FROM questionnaires WHERE concept_id = ?", (concept_id,))
+                row = cursor.fetchone()
+                if row:
+                    return {
+                        "concept_id": concept_id,
+                        "questions": json.loads(row[0] or "[]"),
+                        "examples": []
+                    }
         return None
