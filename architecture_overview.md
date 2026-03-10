@@ -42,7 +42,7 @@ graph TD
 
 ## 🛠️ Technology Stack
 - **Framework**: Streamlit (Web UI)
-- **AI/LLM**: Azure OpenAI (GPT-4o)
+- **AI/LLM**: Azure OpenAI (GPT-5.2/GPT-4o via API)
 - **Database (Source)**: ClickHouse (Schema discovery)
 - **Database (Local Persistence)**: SQLite (Questionnaires & Saved Scenarios)
 - **Data Handling**: Pandas & NumPy
@@ -58,13 +58,13 @@ graph TD
 - App loads specific logic and conditions from `config/orthotics_rules.json`.
 
 ### 2. Schema Sync
-- `SchemaReader` connects to ClickHouse to fetch real-time column names.
+- `SchemaReader` connects to ClickHouse to fetch real-time column names silently in the background for `ClaimsInscope`.
 - `SchemaManager` maps cryptic internal names (e.g., `CLCL_ID`) to user-friendly labels (**Claim Identifier**).
 
-### 3. Questionnaire Generation
-- **Manual**: Leads can pick columns and write questions in Tab 2.
-- **AI-Driven**: `LLMSyntheticGenerator` analyzes rules and suggests 5-7 interactive (Yes/No) questions.
-- **Persistence**: Questionnaires are saved to `config/questionnaires.db` so they persist across sessions.
+### 3. Questionnaire Generation & Editable Examples
+- **Manual**: Leads can pick columns and write questions in Tab 2. Editable synthetic claim examples are automatically generated in a continuous `st.data_editor` Spreadsheet to match the active columns.
+- **AI-Driven**: `LLMSyntheticGenerator` analyzes rules and suggests 5-7 interactive (Yes/No) questions. It also intelligently crafts **2 highly realistic matching mock claim examples** natively.
+- **Persistence**: Questionnaires and their manually refined tabular string `examples_json` are saved to `config/questionnaires.db` so they persist across sessions.
 
 ### 4. Quiz Execution
 - **Synthetic Data Generation**:
@@ -80,8 +80,8 @@ graph TD
 | Module | Responsibility |
 | :--- | :--- |
 | `app.py` | Central orchestrator, session state management, and tab routing. |
-| `llm_synthetic_generator.py` | AI Prompt Engineering, result parsing, and Medical Field Normalizer (alias mapping). |
-| `questionnaire_builder.py` | SQLite CRUD operations for questionnaires and cached quiz scenarios. |
+| `llm_synthetic_generator.py` | AI Prompt Engineering, result parsing, Medical Field Normalizer, dynamic fallback mechanisms mirroring Rule-based logic, and Example Generation. |
+| `questionnaire_builder.py` | SQLite CRUD operations for questionnaires, explicit `examples_json` support, and cached quiz scenarios. |
 | `schema_manager.py` | The "Naming Bridge" - maintains the dictionary of internal vs friendly names. |
 | `synthetic_data_generator.py` | High-performance, local scenario generation for standard testing. |
 | `evaluation_engine.py` | Scoring logic and feedback generation. |

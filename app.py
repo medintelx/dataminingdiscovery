@@ -340,52 +340,119 @@ with tab3:
                 if q["column"] != "OTHER" and q["column"] not in current_columns:
                     current_columns.append(q["column"])
             
-            st.markdown("### Claim Examples")
-            
             saved_examples = st.session_state.get(f"saved_ex_override_{selected_concept['id']}", saved_q.get("examples", []))
             
             if not saved_examples and current_columns:
                 rules = load_rules(selected_concept["rule_file"])
                 gen = LLMSyntheticGenerator(rules)
-                with st.spinner("Auto-generating synthetic examples..."):
+                with st.spinner("Auto-generating mock questionnaire scenarios..."):
                     new_df, _ = gen.generate_quiz_data(current_columns, 2)
                     saved_examples = new_df[current_columns].to_dict('records')
                     st.session_state[f"saved_ex_override_{selected_concept['id']}"] = saved_examples
 
             df_examples = pd.DataFrame(saved_examples)
+            if not current_columns:
+                current_columns = []
             for c in current_columns:
                 if c not in df_examples.columns:
                     df_examples[c] = ""
-            df_examples = df_examples[current_columns]
+            if current_columns:
+                df_examples = df_examples[current_columns]
             
             friendly_cols = {col: ui_schema_mgr.get_friendly_name(col) for col in current_columns}
             display_df = df_examples.rename(columns=friendly_cols)
             
-            edited_df = st.data_editor(display_df, num_rows="dynamic", use_container_width=True, key="saved_examples_editor")
+            # 1. Define UI visual order via containers
+            save_container = st.container()
+            tree_container = st.container()
+            tabular_container = st.container()
             
-            reverse_friendly_cols = {v: k for k, v in friendly_cols.items()}
-            updated_examples = edited_df.rename(columns=reverse_friendly_cols).to_dict('records')
+            # 2. Execute Data Editor first but render it visually in the bottom container
+            with tabular_container:
+                st.write("") # small spacing
+                with st.expander("✏️ Edit Example Data manually (Tabular)", expanded=False):
+                    edited_df = st.data_editor(display_df, num_rows="dynamic", use_container_width=True, key="saved_examples_editor")
+                
+                reverse_friendly_cols = {v: k for k, v in friendly_cols.items()}
+                updated_examples = edited_df.rename(columns=reverse_friendly_cols).to_dict('records')
+            
+            # 3. Execute Save controls but render them visually in the top container
+            with save_container:
+                st.divider()
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    submitted = st.button("💾 Save Changes to Questionnaire", use_container_width=True)
+                with col2:
+                    add_blank = st.button("➕ Add Blank Question", use_container_width=True)
+                    
+                if submitted or add_blank:
+                    q_builder = QuestionnaireBuilder(selected_concept["id"])
+                    for q_item in updated_questions:
+                        q_builder.add_question(q_item["column"], q_item["text"], q_item["type"], options=q_item["options"])
+                    
+                    if add_blank:
+                         q_builder.add_question("OTHER", "New Custom Question", "Yes/No", options=[])
+                         
+                    q_builder.set_examples(updated_examples)
+                    q_builder.save_questionnaire()
+                    if f"saved_ex_override_{selected_concept['id']}" in st.session_state:
+                        del st.session_state[f"saved_ex_override_{selected_concept['id']}"]
+                    st.rerun()
+            
+            # 4. Execute Decision Trees but render them visually in the middle container
+            with tree_container:
+                st.divider()
+                st.markdown("### Claim Examples (Decision Tree View)")
+                if current_columns and updated_examples:
+                    num_examples = len(updated_examples)
+                    st.markdown("<div style='background:#e0f7fa; color:#006064; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:12px; text-align:center; margin-bottom:12px;'>🏁 Claim Analysis Starts</div>", unsafe_allow_html=True)
+                    
+                    # Scenario Headers
+                    cols = st.columns(num_examples)
+                    for idx in range(num_examples):
+                        with cols[idx]:
+                            st.markdown(f"<div style='text-align:center;'>#### 🌳 Scenario {idx+1}</div>", unsafe_allow_html=True)
+                    
+                    for i, q in enumerate(updated_questions):
+                        if q["column"] == "OTHER":
+                            continue
+                            
+                        friendly = ui_schema_mgr.get_friendly_name(q["column"])
+                        st.markdown("<div style='text-align: center; color: #ccc; line-height:12px; font-size:14px; margin: 4px 0;'>⬇</div>", unsafe_allow_html=True)
+                        
+                        box_html = f'''
+                        <div style="border:1px solid #ddd; border-radius:4px; padding:6px 8px; background:#fafafa; font-size:13px; line-height:1.3; box-shadow: 0 1px 2px rgba(0,0,0,0.05); text-align:center; margin-bottom:4px;">
+                            <strong style="color:#0f52ba;">Q{i+1}:</strong> {q.get('text', '')}<br/>
+                            <span style="font-size:11px; color:#666;">🔍 {friendly}</span>
+                        </div>
+                        '''
+                        st.markdown(box_html, unsafe_allow_html=True)
+                        
+                        val_cols = st.columns(num_examples)
+                        for ex_idx, ex in enumerate(updated_examples):
+                            val = ex.get(q["column"], "N/A")
+                            
+                            def make_tree_cb(c_id, e_idx, col_name, w_key):
+                                def cb():
+                                    if f"saved_ex_override_{c_id}" not in st.session_state:
+                                        st.session_state[f"saved_ex_override_{c_id}"] = [dict(row) for row in updated_examples]
+                                    new_v = st.session_state[w_key]
+                                    if e_idx < len(st.session_state[f"saved_ex_override_{c_id}"]):
+                                        st.session_state[f"saved_ex_override_{c_id}"][e_idx][col_name] = new_v
+                                return cb
 
-            st.divider()
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                submitted = st.button("💾 Save Changes to Questionnaire", use_container_width=True)
-            with col2:
-                add_blank = st.button("➕ Add Blank Question", use_container_width=True)
-                
-            if submitted or add_blank:
-                q_builder = QuestionnaireBuilder(selected_concept["id"])
-                for q_item in updated_questions:
-                    q_builder.add_question(q_item["column"], q_item["text"], q_item["type"], options=q_item["options"])
-                
-                if add_blank:
-                     q_builder.add_question("OTHER", "New Custom Question", "Yes/No", options=[])
-                     
-                q_builder.set_examples(updated_examples)
-                q_builder.save_questionnaire()
-                if f"saved_ex_override_{selected_concept['id']}" in st.session_state:
-                    del st.session_state[f"saved_ex_override_{selected_concept['id']}"]
-                st.rerun()
+                            widget_key = f"tree_{selected_concept['id']}_{ex_idx}_{q['column']}"
+                            with val_cols[ex_idx]:
+                                st.text_input(
+                                    label="hidden", 
+                                    value=val, 
+                                    key=widget_key, 
+                                    label_visibility="collapsed",
+                                    on_change=make_tree_cb(selected_concept["id"], ex_idx, q["column"], widget_key)
+                                )
+                                
+                    st.markdown("<div style='text-align: center; color: #ccc; line-height:12px; font-size:14px; margin: 2px 0;'>⬇</div>", unsafe_allow_html=True)
+                    st.markdown("<div style='background:#E8F5E9; color:#2E7D32; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:12px; text-align:center; margin-bottom:8px;'>✅ Audit Complete</div>", unsafe_allow_html=True)
         
         # if st.button("🤖 Regenerate (Overwrites current)", use_container_width=True):
         #     show_gen_form = True
@@ -462,48 +529,93 @@ with tab3:
             
         st.divider()
         st.divider()
-        st.markdown("### Generated Claim Examples (Tabular)")
-        ai_examples = st.session_state.get("ai_examples", [])
-        
-        current_columns = []
-        for sug in st.session_state.ai_suggestions:
-            if isinstance(sug, dict) and sug.get("column", "OTHER") != "OTHER" and sug["column"] not in current_columns:
-                current_columns.append(sug["column"])
-                
-        if not ai_examples and current_columns:
-            rules = load_rules(selected_concept["rule_file"])
-            gen = LLMSyntheticGenerator(rules)
-            with st.spinner("Auto-generating synthetic examples..."):
-                new_df, _ = gen.generate_quiz_data(current_columns, 2)
-                ai_examples = new_df[current_columns].to_dict('records')
-                st.session_state.ai_examples = ai_examples
-
-        df_examples = pd.DataFrame(ai_examples)
-        for c in current_columns:
-            if c not in df_examples.columns:
-                df_examples[c] = ""
-        df_examples = df_examples[current_columns]
-        
         friendly_cols = {col: schema_mgr.get_friendly_name(col) for col in current_columns}
         display_df = df_examples.rename(columns=friendly_cols)
         
-        edited_df = st.data_editor(display_df, num_rows="dynamic", use_container_width=True, key="ai_preview_examples_editor")
+        # 1. Define UI visual order via containers
+        ai_save_container = st.container()
+        ai_tree_container = st.container()
+        ai_tabular_container = st.container()
         
-        reverse_friendly_cols = {v: k for k, v in friendly_cols.items()}
-        updated_ai_examples = edited_df.rename(columns=reverse_friendly_cols).to_dict('records')
-        st.session_state.ai_examples = updated_ai_examples
-        
-        if st.button("✅ Apply & Save This Questionnaire", use_container_width=True):
-                q_builder = QuestionnaireBuilder(selected_concept["id"])
-                for sug in st.session_state.ai_suggestions:
-                    if isinstance(sug, dict):
-                        q_builder.add_question(sug.get("column", "OTHER"), sug.get("text"), sug.get("type"), options=sug.get("options", []))
-                q_builder.set_examples(st.session_state.get("ai_examples", []))
-                q_builder.save_questionnaire()
-                st.session_state.selected_friendly_list = [schema_mgr.get_friendly_name(s["column"]) for s in st.session_state.ai_suggestions if isinstance(s, dict)]
-                st.session_state.ai_suggestions = None
-                st.session_state.ai_examples = None
-                st.rerun()
+        # 2. Execute Tabular editor
+        with ai_tabular_container:
+            st.write("")
+            with st.expander("✏️ Edit Example Data manually (Tabular)", expanded=False):
+                edited_df = st.data_editor(display_df, num_rows="dynamic", use_container_width=True, key="ai_preview_examples_editor")
+            
+            reverse_friendly_cols = {v: k for k, v in friendly_cols.items()}
+            updated_ai_examples = edited_df.rename(columns=reverse_friendly_cols).to_dict('records')
+            st.session_state.ai_examples = updated_ai_examples
+            
+        # 3. Execute Save controls
+        with ai_save_container:
+            st.divider()
+            if st.button("✅ Apply & Save This Questionnaire", use_container_width=True):
+                    q_builder = QuestionnaireBuilder(selected_concept["id"])
+                    for sug in st.session_state.ai_suggestions:
+                        if isinstance(sug, dict):
+                            q_builder.add_question(sug.get("column", "OTHER"), sug.get("text"), sug.get("type"), options=sug.get("options", []))
+                    q_builder.set_examples(st.session_state.get("ai_examples", []))
+                    q_builder.save_questionnaire()
+                    st.session_state.selected_friendly_list = [schema_mgr.get_friendly_name(s["column"]) for s in st.session_state.ai_suggestions if isinstance(s, dict)]
+                    st.session_state.ai_suggestions = None
+                    st.session_state.ai_examples = None
+                    st.rerun()
+
+        # 4. Execute Decision Trees
+        with ai_tree_container:
+            st.divider()
+            st.markdown("### Generated Claim Examples (Decision Tree View)")
+            if current_columns and updated_ai_examples:
+                num_examples = len(updated_ai_examples)
+                st.markdown("<div style='background:#e0f7fa; color:#006064; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:12px; text-align:center; margin-bottom:12px;'>🏁 Claim Analysis Starts</div>", unsafe_allow_html=True)
+                
+                # Scenario Headers
+                cols = st.columns(num_examples)
+                for idx in range(num_examples):
+                    with cols[idx]:
+                        st.markdown(f"<div style='text-align:center;'>#### 🌳 Scenario {idx+1}</div>", unsafe_allow_html=True)
+                
+                for i, sug in enumerate(st.session_state.ai_suggestions):
+                    if not isinstance(sug, dict): continue
+                    if sug.get("column", "OTHER") == "OTHER": continue
+                        
+                    friendly = schema_mgr.get_friendly_name(sug["column"])
+                    st.markdown("<div style='text-align: center; color: #ccc; line-height:12px; font-size:14px; margin: 4px 0;'>⬇</div>", unsafe_allow_html=True)
+                    
+                    box_html = f'''
+                    <div style="border:1px solid #ddd; border-radius:4px; padding:6px 8px; background:#fafafa; font-size:13px; line-height:1.3; box-shadow: 0 1px 2px rgba(0,0,0,0.05); text-align:center; margin-bottom:4px;">
+                        <strong style="color:#0f52ba;">Q{i+1}:</strong> {sug.get('text', '')}<br/>
+                        <span style="font-size:11px; color:#666;">🔍 {friendly}</span>
+                    </div>
+                    '''
+                    st.markdown(box_html, unsafe_allow_html=True)
+                    
+                    val_cols = st.columns(num_examples)
+                    for ex_idx, ex in enumerate(updated_ai_examples):
+                        val = ex.get(sug["column"], "N/A")
+                        
+                        def make_ai_tree_cb(e_idx, col_name, w_key):
+                            def cb():
+                                new_v = st.session_state[w_key]
+                                if "ai_examples" not in st.session_state:
+                                    st.session_state.ai_examples = []
+                                if st.session_state.ai_examples and e_idx < len(st.session_state.ai_examples):
+                                    st.session_state.ai_examples[e_idx][col_name] = new_v
+                            return cb
+                        
+                        widget_key = f"ai_tree_{selected_concept['id']}_{ex_idx}_{sug['column']}"
+                        with val_cols[ex_idx]:
+                            st.text_input(
+                                label="hidden", 
+                                value=val, 
+                                key=widget_key, 
+                                label_visibility="collapsed",
+                                on_change=make_ai_tree_cb(ex_idx, sug["column"], widget_key)
+                            )
+                            
+                st.markdown("<div style='text-align: center; color: #ccc; line-height:12px; font-size:14px; margin: 2px 0;'>⬇</div>", unsafe_allow_html=True)
+                st.markdown("<div style='background:#E8F5E9; color:#2E7D32; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:12px; text-align:center; margin-bottom:8px;'>✅ Audit Complete</div>", unsafe_allow_html=True)
 
 with tab4:
     st.header("Calibration Quiz")

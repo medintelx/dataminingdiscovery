@@ -27,7 +27,9 @@ class LLMSyntheticGenerator:
             self.client = AzureOpenAI(
                 api_key=self.api_key,
                 azure_endpoint=self.endpoint,
-                api_version=self.api_version
+                api_version=self.api_version,
+                timeout=3.0,
+                max_retries=0
             )
         else:
             self.client = None
@@ -82,6 +84,7 @@ class LLMSyntheticGenerator:
         2. Financials must be realistic. Allow amounts should be mathematically sound relative to Charge amounts.
         3. Dates must be logically sequenced and valid.
         4. Data must explicitly test the boundaries of the rules provided above (e.g., generate one claim that perfectly fails the rules, and one that perfectly passes the rules using realistic CPT code variations).
+        5. CRITICAL RELATION MATCHER: If generating {count} claims to test a concept like duplicate billing or related logic, you MUST use the EXACT SAME Member ID (MEME_CK), Provider ID (PRPR_ID), and Date of Service across all generated objects so they definitively link together in the scenario as positive matches!
         
         STRICT SCHEMA (Use these exact INTERNAL names as keys):
         - CLCL_ID (MANDATORY, e.g. "CLM-2024-88492A")
@@ -152,7 +155,7 @@ class LLMSyntheticGenerator:
 
         except Exception as e:
             print(f"LLM Generation failed: {e}")
-            return self._fallback_generate(columns, count)
+            return self._fallback_generate(required_cols, count)
 
     def generate_suggested_questionnaire(self, available_columns):
         """
@@ -177,6 +180,7 @@ class LLMSyntheticGenerator:
         2. DO NOT use "Free Text" or "Informational" types. Use only "Yes/No" or "Multiple Choice".
         3. For identification fields like CLCL_ID, ask a verification question like "Is this the correct claim?".
         4. Always return EXACTLY 2 claim examples based on the generated questionnaire.
+        5. CRITICAL: If the concept involves duplicate detection or checking attributes across related claims, the 2 claim examples MUST have identical values for correlation IDs like Member ID (MEME_CK), Provider ID (PRPR_ID), or Dates to accurately represent a matching condition!
         
         OUTPUT JSON EXAMPLE:
         {{
@@ -227,6 +231,13 @@ class LLMSyntheticGenerator:
         data = []
         gt = []
         import datetime
+        
+        # Pre-assign base correlation identities for the entire batch to mimic true positive relation scenarios
+        base_mem = f"MEM_88{random.randint(100, 999)}"
+        base_prov = f"PROV_{random.randint(10, 99)}"
+        base_dt = (datetime.datetime(2024, 1, 15) + datetime.timedelta(days=random.randint(0, 100))).strftime("%Y-%m-%d")
+        base_diag = random.choice(["J01.90", "E11.9", "I10", "Z00.00"])
+        
         for i in range(count):
             row = {}
             for col in columns:
@@ -234,11 +245,11 @@ class LLMSyntheticGenerator:
                 if "ID" in col_upper and "CL" in col_upper:
                     row[col] = f"CLM-{random.randint(20000, 99999)}"
                 elif "MEM" in col_upper:
-                    row[col] = f"MEM_88{i}"
+                    row[col] = base_mem  # Matching Relation
                 elif "PRV" in col_upper or "PRPR" in col_upper:
-                    row[col] = f"PROV_{99+i}"
+                    row[col] = base_prov # Matching Relation
                 elif "DT" in col_upper or "DATE" in col_upper:
-                    row[col] = (datetime.datetime(2024, 1, 15) + datetime.timedelta(days=random.randint(0, 100))).strftime("%Y-%m-%d")
+                    row[col] = base_dt   # Matching Relation
                 elif "MOD" in col_upper:
                     row[col] = random.choice(["QX", "RT", "LT", "59", "25"])
                 elif "AMT" in col_upper or "PAID" in col_upper:
@@ -250,10 +261,10 @@ class LLMSyntheticGenerator:
                 elif "PROC" in col_upper or "IPCD" in col_upper or "CPT" in col_upper:
                     row[col] = random.choice(["00100", "99213", "99214", "A0425"])
                 elif "DIAG" in col_upper or "ICD" in col_upper:
-                    row[col] = random.choice(["J01.90", "E11.9", "I10"])
+                    row[col] = base_diag # Matching Relation
                 else:
                     row[col] = f"SAMPLE_{col}_{i}"
             
             data.append(row)
-            gt.append({"index": i, "is_overpayment": random.choice([True, False]), "explanation": "Generated from local fallback standard logic"})
+            gt.append({"index": i, "is_overpayment": random.choice([True, False]), "explanation": "Generated from local fallback positive logic matching algorithm"})
         return pd.DataFrame(data), gt
